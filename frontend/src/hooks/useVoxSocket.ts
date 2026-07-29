@@ -1,10 +1,12 @@
 /**
  * WebSocket link to the inference backend.
  *
- * Sends `{"landmarks": [...126 raw floats]}` and receives one of:
+ * Sends `{"landmarks": [...126 raw floats]}` frames and
+ * `{"config": {...}}` settings; receives one of:
  *   {"word": "hello", "confidence": 0.97}                    a confirmed word
  *   {"status":"listening", "top", "confidence", "stable_for"} live best guess
  *   {"status":"listening", "buffered", "needed"}             window still filling
+ *   {"status":"config", "confidence_threshold"}               settings ack
  *   {"error": "..."}                                          bad frame / no model
  *
  * Normalization happens server-side in ml/normalize.py — the single shared
@@ -35,6 +37,8 @@ export interface VoxSocket {
   buffered: { have: number; need: number } | null;
   error: string | null;
   send: (vector: Float32Array) => void;
+  /** Set the backend's per-connection confidence threshold (re-sent on reconnect). */
+  setThreshold: (value: number) => void;
 }
 
 /** `onWord` fires once per confirmed word (the backend already de-duplicates). */
@@ -43,6 +47,7 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
   onWordRef.current = onWord;
 
   const wsRef = useRef<WebSocket | null>(null);
+  const thresholdRef = useRef<number | null>(null);
   const [socket, setSocket] = useState<SocketState>("connecting");
   const [live, setLive] = useState<LiveGuess | null>(null);
   const [buffered, setBuffered] = useState<{ have: number; need: number } | null>(null);
@@ -62,6 +67,14 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
         if (disposed) return;
         setSocket("open");
         setError(null);
+        // A non-default threshold survives reconnects.
+        if (thresholdRef.current !== null) {
+          ws.send(
+            JSON.stringify({
+              config: { confidence_threshold: thresholdRef.current },
+            }),
+          );
+        }
       };
 
       ws.onclose = () => {
@@ -81,6 +94,8 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
           setBuffered(null);
         } else if (msg.error) {
           setError(msg.error);
+        } else if (msg.status === "config") {
+          // ack only — nothing to render
         } else if (msg.top !== undefined) {
           setLive({
             top: msg.top,
@@ -116,5 +131,13 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
     }
   }, []);
 
-  return { socket, live, buffered, error, send };
+  const setThreshold = useCallback((value: number) => {
+    thresholdRef.current = value;
+    const ws = wsRef.current;
+    if (ws?.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ config: { confidence_threshold: value } }));
+    }
+  }, []);
+
+  return { socket, live, buffered, error, send, setThreshold };
 }

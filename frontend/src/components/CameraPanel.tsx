@@ -1,4 +1,4 @@
-/** Left column: webcam, skeleton overlay, live confidence, current word. */
+/** Left column: webcam, skeleton overlay, live confidence, current word, FPS. */
 import type { HandTracking } from "../hooks/useHandTracking";
 import type { LiveGuess } from "../hooks/useVoxSocket";
 
@@ -7,6 +7,7 @@ interface Props {
   live: LiveGuess | null;
   buffered: { have: number; need: number } | null;
   latestWord: { text: string; confidence: number } | null;
+  threshold: number;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -17,8 +18,9 @@ const STATUS_LABEL: Record<string, string> = {
   stopped: "Stopped",
 };
 
-export function CameraPanel({ tracking, live, buffered, latestWord }: Props) {
-  const { videoRef, canvasRef, status, error, delegate, handsVisible } = tracking;
+export function CameraPanel({ tracking, live, buffered, latestWord, threshold }: Props) {
+  const { videoRef, canvasRef, status, error, delegate, handsVisible, fps, inferMs } =
+    tracking;
   const confidence = live?.confidence ?? null;
 
   return (
@@ -51,9 +53,16 @@ export function CameraPanel({ tracking, live, buffered, latestWord }: Props) {
           )}
 
           {status === "running" && (
-            <div className="stage__hands">
-              {handsVisible === 0 ? "No hands detected" : `${handsVisible} hand${handsVisible > 1 ? "s" : ""}`}
-            </div>
+            <>
+              <div className="stage__hands">
+                {handsVisible === 0
+                  ? "No hands detected"
+                  : `${handsVisible} hand${handsVisible > 1 ? "s" : ""}`}
+              </div>
+              <div className="stage__fps" title="detections per second · worker inference time">
+                {fps} fps · {inferMs} ms
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -82,7 +91,11 @@ export function CameraPanel({ tracking, live, buffered, latestWord }: Props) {
               style={{ width: `${Math.round((confidence ?? 0) * 100)}%` }}
             />
             {/* The backend only accepts a word above this confidence. */}
-            <div className="bar__threshold" style={{ left: "85%" }} aria-hidden />
+            <div
+              className="bar__threshold"
+              style={{ left: `${Math.round(threshold * 100)}%` }}
+              aria-hidden
+            />
           </div>
         </div>
       </footer>

@@ -1,24 +1,22 @@
 /**
- * Camera + MediaPipe HandLandmarker, driving a canvas overlay and emitting one
- * 126-float vector per throttled frame.
+ * Camera capture on the main thread, MediaPipe detection in a Web Worker (P9).
  *
- * The detection contract is unchanged from the spike and must stay that way:
- *   - detect on the RAW frame; only the preview is mirrored, in CSS
- *   - throttle to ~15 FPS
- *   - build the vector with buildFrameVector (see src/landmarks.ts)
+ * Main thread: getUserMedia, ImageBitmap capture at ~15 FPS, skeleton drawing,
+ * UI state. Worker: HandLandmarker + buildFrameVector (imported there, so the
+ * 126-float contract with ml/collect.py is unchanged).
  *
- * MediaPipe still runs on the main thread. Moving it into a Web Worker is
- * tracked separately; it does not change anything below except where `tick`
- * lives.
+ * Backpressure: at most one frame is in flight. If the worker is still busy
+ * when the next tick fires, that tick is skipped — latency stays bounded and
+ * bitmaps never pile up in the message queue.
+ *
+ * Detection still runs on the RAW frame; only the preview is mirrored, in CSS.
  */
-import { useEffect, useRef, useState } from "react";
-import {
-  DrawingUtils,
-  FilesetResolver,
-  HandLandmarker,
-  type HandLandmarkerResult,
-} from "@mediapipe/tasks-vision";
-import { buildFrameVector } from "../landmarks";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { DrawingUtils, HandLandmarker } from "@mediapipe/tasks-vision";
+import type {
+  WorkerInMessage,
+  WorkerOutMessage,
+} from "../workers/mediapipe.worker";
 
 export const TARGET_FPS = 15;
 const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
@@ -40,38 +38,142 @@ export interface HandTracking {
   error: string | null;
   delegate: "GPU" | "CPU" | null;
   handsVisible: number;
+  /** Measured detection results per second (0 until the loop runs). */
+  fps: number;
+  /** Worker-side inference time for the latest frame, ms. */
+  inferMs: number;
+  /** Cameras available; labels populate once permission is granted. */
+  devices: MediaDeviceInfo[];
+  /** Switch camera; pass a deviceId from `devices`. */
+  selectCamera: (deviceId: string) => void;
+  cameraId: string | null;
 }
 
-/** `onVector` is called with the raw 126-float frame; keep it cheap. */
 export function useHandTracking(onVector: (vector: Float32Array) => void): HandTracking {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Held in a ref so a changing callback identity never restarts the camera.
+  // Held in a ref so a changing callback identity never restarts the pipeline.
   const onVectorRef = useRef(onVector);
   onVectorRef.current = onVector;
 
+  const workerRef = useRef<Worker | null>(null);
+  const drawingRef = useRef<DrawingUtils | null>(null);
+  const pendingRef = useRef(false);
+
+  const [workerReady, setWorkerReady] = useState(false);
   const [status, setStatus] = useState<TrackingStatus>("starting");
   const [error, setError] = useState<string | null>(null);
   const [delegate, setDelegate] = useState<"GPU" | "CPU" | null>(null);
   const [handsVisible, setHandsVisible] = useState(0);
+  const [fps, setFps] = useState(0);
+  const [inferMs, setInferMs] = useState(0);
+  const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [cameraId, setCameraId] = useState<string | null>(null);
 
+  const fpsWindow = useRef({ start: 0, count: 0 });
+  const handCount = useRef(-1);
+
+  /* ------------------------------------------------ worker, created once -- */
   useEffect(() => {
-    // StrictMode mounts effects twice in dev. Every await re-checks this flag so
-    // a torn-down mount never leaves a camera or landmarker alive.
+    const worker = new Worker(
+      new URL("../workers/mediapipe.worker.ts", import.meta.url),
+      { type: "module" },
+    );
+    workerRef.current = worker;
+
+    worker.onmessage = (event: MessageEvent<WorkerOutMessage>) => {
+      const msg = event.data;
+      if (msg.type === "ready") {
+        setDelegate(msg.delegate);
+        setWorkerReady(true);
+        return;
+      }
+      if (msg.type === "error") {
+        setError(`Hand tracking failed: ${msg.message}`);
+        setStatus("stopped");
+        return;
+      }
+
+      // result
+      pendingRef.current = false;
+      setInferMs(Math.round(msg.inferMs));
+
+      const now = performance.now();
+      const w = fpsWindow.current;
+      w.count += 1;
+      if (now - w.start >= 1000) {
+        setFps(Math.round((w.count * 1000) / (now - w.start)));
+        w.start = now;
+        w.count = 0;
+      }
+
+      const canvas = canvasRef.current;
+      const drawing = drawingRef.current;
+      if (canvas && drawing) {
+        const ctx = canvas.getContext("2d")!;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        msg.landmarks.forEach((hand, i) => {
+          const label = msg.handedness[i]?.[0]?.categoryName ?? "";
+          const colour = HAND_COLOURS[label] ?? "#94a3b8";
+          drawing.drawConnectors(hand, HandLandmarker.HAND_CONNECTIONS, {
+            color: colour,
+            lineWidth: 3,
+          });
+          drawing.drawLandmarks(hand, { color: "#f8fafc", radius: 3 });
+        });
+      }
+
+      if (msg.landmarks.length !== handCount.current) {
+        handCount.current = msg.landmarks.length;
+        setHandsVisible(msg.landmarks.length);
+      }
+
+      onVectorRef.current(msg.vector);
+    };
+
+    setStatus("loading-model");
+    const init: WorkerInMessage = {
+      type: "init",
+      wasmPath: `${location.origin}/mediapipe/wasm`,
+      modelPath: `${location.origin}/models/hand_landmarker.task`,
+    };
+    worker.postMessage(init);
+
+    return () => {
+      worker.postMessage({ type: "close" } satisfies WorkerInMessage);
+      worker.terminate();
+      workerRef.current = null;
+    };
+  }, []);
+
+  /* --------------------------------- camera + capture loop, per cameraId -- */
+  useEffect(() => {
+    if (!workerReady) return;
+
     let disposed = false;
     let stream: MediaStream | null = null;
-    let landmarker: HandLandmarker | null = null;
     let raf = 0;
 
     const start = async () => {
       try {
         setStatus("requesting-camera");
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 1280, height: 720 },
+          video: cameraId
+            ? { deviceId: { exact: cameraId }, width: 1280, height: 720 }
+            : { width: 1280, height: 720 },
           audio: false,
         });
         if (disposed) return;
+
+        // Labels are only exposed after permission; refresh the device list.
+        navigator.mediaDevices
+          .enumerateDevices()
+          .then((all) => {
+            if (!disposed)
+              setDevices(all.filter((d) => d.kind === "videoinput"));
+          })
+          .catch(() => {});
 
         const video = videoRef.current;
         if (!video) return;
@@ -79,79 +181,50 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
         await video.play();
         if (disposed) return;
 
-        setStatus("loading-model");
-        const fileset = await FilesetResolver.forVisionTasks("/mediapipe/wasm");
-        if (disposed) return;
-
-        const options = {
-          baseOptions: { modelAssetPath: "/models/hand_landmarker.task" },
-          numHands: 2,
-          runningMode: "VIDEO" as const,
-        };
-        try {
-          landmarker = await HandLandmarker.createFromOptions(fileset, {
-            ...options,
-            baseOptions: { ...options.baseOptions, delegate: "GPU" as const },
-          });
-          if (!disposed) setDelegate("GPU");
-        } catch {
-          if (disposed) return;
-          landmarker = await HandLandmarker.createFromOptions(fileset, {
-            ...options,
-            baseOptions: { ...options.baseOptions, delegate: "CPU" as const },
-          });
-          if (!disposed) setDelegate("CPU");
-        }
-        if (disposed) return;
-
-        setStatus("running");
-
         const canvas = canvasRef.current!;
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        const ctx = canvas.getContext("2d")!;
-        const drawing = new DrawingUtils(ctx);
+        drawingRef.current = new DrawingUtils(canvas.getContext("2d")!);
+
+        setStatus("running");
+        setError(null);
+        fpsWindow.current = { start: performance.now(), count: 0 };
 
         let lastFrame = 0;
         let lastTimestamp = -1;
-        let lastHandCount = -1;
 
         const tick = () => {
           raf = requestAnimationFrame(tick);
-          if (disposed || !landmarker) return;
+          if (disposed) return;
 
           const now = performance.now();
-          if (now - lastFrame < FRAME_INTERVAL_MS) return; // throttle to ~15 FPS
-          lastFrame = now;
-
+          if (now - lastFrame < FRAME_INTERVAL_MS) return; // ~15 FPS
+          if (pendingRef.current) return; // worker still busy — skip
           const v = videoRef.current;
           if (!v || v.readyState < 2) return;
+          lastFrame = now;
 
           // detectForVideo requires strictly increasing timestamps.
           let ts = Math.round(now);
           if (ts <= lastTimestamp) ts = lastTimestamp + 1;
           lastTimestamp = ts;
 
-          // Detection runs on the RAW frame; the preview is mirrored in CSS.
-          const result: HandLandmarkerResult = landmarker.detectForVideo(v, ts);
-
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          result.landmarks.forEach((hand, i) => {
-            const label = result.handedness[i]?.[0]?.categoryName ?? "";
-            const colour = HAND_COLOURS[label] ?? "#94a3b8";
-            drawing.drawConnectors(hand, HandLandmarker.HAND_CONNECTIONS, {
-              color: colour,
-              lineWidth: 3,
+          pendingRef.current = true;
+          createImageBitmap(v)
+            .then((bitmap) => {
+              if (disposed || !workerRef.current) {
+                bitmap.close();
+                pendingRef.current = false;
+                return;
+              }
+              workerRef.current.postMessage(
+                { type: "frame", bitmap, timestamp: ts } satisfies WorkerInMessage,
+                [bitmap],
+              );
+            })
+            .catch(() => {
+              pendingRef.current = false;
             });
-            drawing.drawLandmarks(hand, { color: "#f8fafc", radius: 3 });
-          });
-
-          if (result.landmarks.length !== lastHandCount) {
-            lastHandCount = result.landmarks.length;
-            setHandsVisible(lastHandCount);
-          }
-
-          onVectorRef.current(buildFrameVector(result));
         };
         tick();
       } catch (err) {
@@ -175,10 +248,26 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
-      landmarker?.close();
+      pendingRef.current = false;
       stream?.getTracks().forEach((track) => track.stop());
     };
+  }, [workerReady, cameraId]);
+
+  const selectCamera = useCallback((deviceId: string) => {
+    setCameraId(deviceId || null);
   }, []);
 
-  return { videoRef, canvasRef, status, error, delegate, handsVisible };
+  return {
+    videoRef,
+    canvasRef,
+    status,
+    error,
+    delegate,
+    handsVisible,
+    fps,
+    inferMs,
+    devices,
+    selectCamera,
+    cameraId,
+  };
 }

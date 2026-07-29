@@ -172,6 +172,8 @@ async def websocket_endpoint(websocket: WebSocket):
     stable_count = 0                  # how many predictions in a row it has won
     emitted_class: int | None = None  # latch, see below
     frames = 0
+    # Per-connection settings; the UI's settings panel can adjust these.
+    conf_threshold = CONFIDENCE_THRESHOLD
 
     try:
         while True:
@@ -180,8 +182,27 @@ async def websocket_endpoint(websocket: WebSocket):
                 payload = json.loads(raw)
                 if not isinstance(payload, dict):
                     raise ValueError("message must be a JSON object")
+
+                # Settings message: {"config": {"confidence_threshold": 0.9}}
+                if "config" in payload:
+                    cfg = payload["config"]
+                    if not isinstance(cfg, dict):
+                        raise ValueError("'config' must be an object")
+                    if "confidence_threshold" in cfg:
+                        value = float(cfg["confidence_threshold"])
+                        if not 0.5 <= value <= 0.99:
+                            raise ValueError(
+                                "confidence_threshold must be in [0.5, 0.99]"
+                            )
+                        conf_threshold = value
+                        log.info("config: threshold=%.2f (%s)", value, client)
+                    await websocket.send_json(
+                        {"status": "config", "confidence_threshold": conf_threshold}
+                    )
+                    continue
+
                 vec = parse_landmarks(payload)
-            except (json.JSONDecodeError, ValueError) as exc:
+            except (json.JSONDecodeError, ValueError, TypeError) as exc:
                 await websocket.send_json({"error": str(exc)})
                 continue
 
@@ -212,7 +233,7 @@ async def websocket_endpoint(websocket: WebSocket):
             )
 
             accept = (
-                confidence > CONFIDENCE_THRESHOLD
+                confidence > conf_threshold
                 and stable_count >= STABILITY_FRAMES
                 # Latch: the window slides one frame at a time, so without this
                 # a held sign would re-emit its word on every single frame.
