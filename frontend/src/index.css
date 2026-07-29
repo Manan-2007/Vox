@@ -1243,3 +1243,49 @@ p {
     align-items: flex-start;
   }
 }
+
+/* ------------------------------------------------------- 3D sign avatar -- */
+
+.avatar3d {
+  width: 100%;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(120, 155, 123, 0.10), transparent 70%),
+    var(--panel-raised);
+}
+
+.avatar3d-strip {
+  position: relative;
+  flex: 0 0 auto;
+  border-top: 1px solid var(--border-soft);
+}
+
+.avatar3d-strip__label {
+  position: absolute;
+  left: 12px;
+  bottom: 8px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+/* the replay avatar floats over the clip so both are visible at once */
+.isl__avatar {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 44%;
+  min-width: 110px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(41, 51, 44, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+@media (max-width: 1180px) {
+  .avatar3d-strip {
+    display: none; /* laptop widths: the camera needs the height more */
+  }
+}

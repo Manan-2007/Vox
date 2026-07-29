@@ -184,6 +184,7 @@ export function SessionPage() {
           onPhrase={handleHeard}
           ttsSpeaking={speech.speaking}
           lastWordAt={latestWord?.at ?? null}
+          replayFrame={isl.replayFrame}
         />
       </main>
 

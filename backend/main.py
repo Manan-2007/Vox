@@ -37,9 +37,8 @@ ML_DIR = REPO_ROOT / "ml"
 
 # The one shared normalization implementation — see module docstring.
 sys.path.insert(0, str(ML_DIR))
-from normalize import FEATURE_DIM, normalize_frame  # noqa: E402
+from normalize import FEATURE_DIM, SEQUENCE_LENGTH, normalize_frame  # noqa: E402
 
-SEQUENCE_LENGTH = 30
 CONFIDENCE_THRESHOLD = 0.85
 STABILITY_FRAMES = 3  # identical top class this many predictions in a row
 

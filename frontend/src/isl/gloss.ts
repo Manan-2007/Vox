@@ -17,20 +17,37 @@ const STOPWORDS = new Set([
   "um", "uh", "er", "like", "just", "really", "very",
 ]);
 
+/**
+ * Multi-word signs, matched BEFORE single words and longest-first. ISL renders
+ * "good morning" as one sign, not "good" + "morning", so a word-by-word gloss
+ * would be wrong (and would queue clips that do not exist).
+ */
+const PHRASES: [string[], string][] = [
+  [["how", "are", "you"], "howareyou"],
+  [["good", "morning"], "goodmorning"],
+  [["thank", "you"], "thankyou"],
+  [["thanks", "a", "lot"], "thankyou"],
+  [["nice", "to", "meet", "you"], "pleased"],
+  [["how", "do", "you", "do"], "howareyou"],
+];
+
 /** Spoken variants folded onto clip vocabulary words. */
 const SYNONYMS: Record<string, string> = {
   hi: "hello",
   hey: "hello",
-  thank: "thanks",
-  thankyou: "thanks",
-  food: "eat",
-  eating: "eat",
-  goodbye: "bye",
-  goodby: "bye",
-  coming: "come",
-  apologies: "sorry",
-  apologise: "sorry",
-  apologize: "sorry",
+  hallo: "hello",
+  thanks: "thankyou",
+  thank: "thankyou",
+  ty: "thankyou",
+  ok: "alright",
+  okay: "alright",
+  fine: "alright",
+  good: "alright",
+  great: "alright",
+  glad: "pleased",
+  happy: "pleased",
+  nice: "pleased",
+  morning: "goodmorning",
 };
 
 export interface GlossToken {
@@ -55,7 +72,21 @@ export function gloss(text: string, available: ReadonlySet<string>): GlossResult
     .split(/\s+/)
     .filter(Boolean);
 
-  for (const raw of words) {
+  // Longest phrases first, so "how are you" wins over "you".
+  const phrases = [...PHRASES].sort((a, b) => b[0].length - a[0].length);
+
+  let i = 0;
+  while (i < words.length) {
+    const phrase = phrases.find(([seq]) =>
+      seq.every((w, k) => words[i + k] === w),
+    );
+    if (phrase) {
+      tokens.push({ word: phrase[1], matched: available.has(phrase[1]) });
+      i += phrase[0].length;
+      continue;
+    }
+    const raw = words[i];
+    i += 1;
     if (STOPWORDS.has(raw)) continue;
     const word = SYNONYMS[raw] ?? raw;
     tokens.push({ word, matched: available.has(word) });

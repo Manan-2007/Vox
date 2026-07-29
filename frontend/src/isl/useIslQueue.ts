@@ -11,12 +11,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { gloss, type GlossResult } from "./gloss";
 
 const MANIFEST_URL = "/clips/manifest.json";
+const MOTION_URL = "/clips/motion.json";
 
 export interface QueueItem {
   id: number;
   word: string;
   src: string; // resolved clip URL
 }
+
+/** Reference motion per word: (T, 141) frames extracted from the clip. */
+export type MotionLibrary = Record<string, number[][]>;
 
 export interface IslQueue {
   /** null while loading; empty object if the manifest is absent/invalid. */
@@ -27,6 +31,8 @@ export interface IslQueue {
   paused: boolean;
   /** Words from the last phrase that had no clip. */
   lastUnmatched: string[];
+  /** Reference 3D motion for the clip currently playing, frame by frame. */
+  replayFrame: Float32Array | null;
   enqueuePhrase: (text: string) => GlossResult;
   next: () => void;
   togglePause: () => void;
@@ -40,7 +46,9 @@ export function useIslQueue(): IslQueue {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [paused, setPaused] = useState(false);
   const [lastUnmatched, setLastUnmatched] = useState<string[]>([]);
+  const [replayFrame, setReplayFrame] = useState<Float32Array | null>(null);
   const availableRef = useRef<Set<string>>(new Set());
+  const motionRef = useRef<MotionLibrary>({});
 
   useEffect(() => {
     let disposed = false;
@@ -64,6 +72,42 @@ export function useIslQueue(): IslQueue {
       disposed = true;
     };
   }, []);
+
+  /* Reference motion, extracted from the same clips by ml/clip_motion.py.
+     Optional: without it the player just shows the video. */
+  useEffect(() => {
+    let disposed = false;
+    fetch(MOTION_URL)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((data: MotionLibrary) => {
+        if (!disposed) motionRef.current = data ?? {};
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  /* Play the reference motion in step with the clip that is on screen. */
+  const playingWord = queue[0]?.word ?? null;
+  useEffect(() => {
+    if (!playingWord) {
+      setReplayFrame(null);
+      return;
+    }
+    const frames = motionRef.current[playingWord];
+    if (!frames?.length) {
+      setReplayFrame(null);
+      return;
+    }
+    let index = 0;
+    setReplayFrame(Float32Array.from(frames[0]));
+    const timer = window.setInterval(() => {
+      index = (index + 1) % frames.length;
+      setReplayFrame(Float32Array.from(frames[index]));
+    }, 1000 / 15); // clips were re-encoded at 15 fps
+    return () => window.clearInterval(timer);
+  }, [playingWord]);
 
   const enqueuePhrase = useCallback(
     (text: string): GlossResult => {
@@ -99,6 +143,7 @@ export function useIslQueue(): IslQueue {
     nowPlaying: queue[0] ?? null,
     paused,
     lastUnmatched,
+    replayFrame,
     enqueuePhrase,
     next,
     togglePause,

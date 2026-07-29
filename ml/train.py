@@ -44,8 +44,8 @@ ML_DIR = Path(__file__).resolve().parent
 DEFAULT_PROCESSED_DIR = ML_DIR / "data" / "processed"
 DEFAULT_MODELS_DIR = ML_DIR / "models"
 
-SEQUENCE_LENGTH = 30
-FEATURE_DIM = 126
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from normalize import FEATURE_DIM, SEQUENCE_LENGTH  # noqa: E402  (the contract)
 
 
 def load_processed(processed_dir: Path):
@@ -82,52 +82,55 @@ def load_processed(processed_dir: Path):
 
 
 def augment_sequence(seq: np.ndarray, rng: np.random.Generator) -> np.ndarray:
-    """One augmented copy of a normalized (30, 126) sequence.
+    """One augmented copy of a normalized (SEQUENCE_LENGTH, 141) sequence.
 
-    Skeleton-space augmentation on normalized landmarks: small in-plane
-    rotation, uniform scale jitter, Gaussian noise, and temporal resampling
-    (speed variation). The literature reports sizeable accuracy gains from
-    exactly these transforms on landmark data.
+    Runs in shoulder-anchored space, where the origin is the body centre, so a
+    rotation/scale about the origin is a coherent whole-body transform. Hands
+    AND the pose block are transformed together — rotating the hands while
+    leaving the anchor fixed would teach the model impossible geometry.
 
-    Zero stays zero: absent-hand blocks and empty frames are never touched,
-    otherwise noise would "unmask" them and corrupt both the Masking layer's
-    view and the absent-hand convention.
+    Zero stays zero: absent-hand blocks and hand-free frames are never touched,
+    otherwise noise would "unmask" them and break both the Masking layer and
+    the absent-hand convention.
     """
     out = seq.copy()
 
     # temporal: resample to a random speed (0.8x..1.2x), back to 30 frames
     if rng.random() < 0.5:
         speed = rng.uniform(0.8, 1.2)
-        src = np.clip(np.arange(30) * speed, 0, 29)
+        src = np.clip(np.arange(SEQUENCE_LENGTH) * speed, 0, SEQUENCE_LENGTH - 1)
         lo = np.floor(src).astype(int)
-        hi = np.minimum(lo + 1, 29)
+        hi = np.minimum(lo + 1, SEQUENCE_LENGTH - 1)
         frac = (src - lo)[:, None]
         resampled = out[lo] * (1 - frac) + out[hi] * frac
-        # a frame interpolated between an empty and a non-empty frame is
+        # a frame interpolated between an empty and a non-empty hand block is
         # neither — keep hard emptiness from the nearer source frame
-        empty = ~seq.any(axis=1)
         nearest = np.where(frac[:, 0] < 0.5, lo, hi)
-        resampled[empty[nearest]] = 0.0
+        for block in range(2):
+            col = slice(block * 63, block * 63 + 63)
+            empty = ~seq[:, col].any(axis=1)
+            resampled[empty[nearest], col] = 0.0
         out = resampled.astype(np.float32)
 
-    theta = rng.uniform(-13, 13) * np.pi / 180.0  # in-plane rotation
+    theta = rng.uniform(-12, 12) * np.pi / 180.0   # whole-body in-plane rotation
     cos_t, sin_t = np.cos(theta), np.sin(theta)
-    scale = rng.uniform(0.9, 1.1)
+    scale = rng.uniform(0.9, 1.1)                  # signer size / camera distance
+    shift = rng.normal(0, 0.05, 2)                 # framing offset
     noise_sd = 0.01
 
-    for block in range(2):
-        lo = block * 63
-        pts = out[:, lo : lo + 63].reshape(-1, 21, 3)
-        present = pts.any(axis=(1, 2))  # per-frame: is this hand there?
+    # every 3-float point in the frame: 42 hand points then 5 pose points
+    for start in range(0, FEATURE_DIM, 3):
+        block_start = (start // 63) * 63 if start < 126 else 126
+        col = slice(block_start, block_start + (63 if start < 126 else 15))
+        present = out[:, col].any(axis=1)          # per frame: is this block there?
         if not present.any():
             continue
-        x = pts[present, :, 0].copy()
-        y = pts[present, :, 1].copy()
-        pts[present, :, 0] = (cos_t * x - sin_t * y) * scale
-        pts[present, :, 1] = (sin_t * x + cos_t * y) * scale
-        pts[present, :, 2] *= scale
-        pts[present] += rng.normal(0, noise_sd, pts[present].shape)
-        out[:, lo : lo + 63] = pts.reshape(-1, 63)
+        x = out[present, start].copy()
+        y = out[present, start + 1].copy()
+        out[present, start] = (cos_t * x - sin_t * y) * scale + shift[0]
+        out[present, start + 1] = (sin_t * x + cos_t * y) * scale + shift[1]
+        out[present, start + 2] *= scale
+        out[present, start : start + 3] += rng.normal(0, noise_sd, (present.sum(), 3))
 
     return out.astype(np.float32)
 

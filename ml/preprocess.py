@@ -27,15 +27,12 @@ from collections import Counter
 from pathlib import Path
 
 import numpy as np
-from sklearn.model_selection import train_test_split
-
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from normalize import FEATURE_DIM, normalize_sequence  # noqa: E402
+from normalize import FEATURE_DIM, SEQUENCE_LENGTH, normalize_sequence  # noqa: E402
 
 ML_DIR = Path(__file__).resolve().parent
 DEFAULT_DATA_DIR = ML_DIR / "data"
 PROCESSED_DIRNAME = "processed"
-SEQUENCE_LENGTH = 30
 
 
 def discover_labels(data_dir: Path) -> list[str]:
@@ -52,13 +49,20 @@ def discover_labels(data_dir: Path) -> list[str]:
     return labels
 
 
-def load_label(label_dir: Path) -> tuple[list[np.ndarray], list[str], int]:
+def source_video(path: Path) -> str:
+    """The source video a sample came from — `<video>_<window>.npy`."""
+    return path.stem.rsplit("_", 1)[0]
+
+
+def load_label(label_dir: Path) -> tuple[list[np.ndarray], list[str], list[str], int]:
     """Load and normalize every sample for one label.
 
-    Returns (sequences, skipped_messages, n_empty) where n_empty counts samples
-    in which no hand was ever detected.
+    Returns (sequences, groups, skipped_messages, n_empty); `groups` is the
+    source video per sample, and n_empty counts samples in which no hand was
+    ever detected.
     """
     sequences: list[np.ndarray] = []
+    groups: list[str] = []
     skipped: list[str] = []
     n_empty = 0
 
@@ -80,8 +84,9 @@ def load_label(label_dir: Path) -> tuple[list[np.ndarray], list[str], int]:
             n_empty += 1  # kept, but flagged: no hand was ever visible
 
         sequences.append(normalize_sequence(raw))
+        groups.append(source_video(path))
 
-    return sequences, skipped, n_empty
+    return sequences, groups, skipped, n_empty
 
 
 def main() -> None:
@@ -102,17 +107,20 @@ def main() -> None:
 
     sequences: list[np.ndarray] = []
     y_list: list[int] = []
+    group_list: list[str] = []
     all_skipped: list[str] = []
     empty_by_label: dict[str, int] = {}
 
     for index, label in enumerate(labels):
-        seqs, skipped, n_empty = load_label(args.data_dir / label)
+        seqs, groups, skipped, n_empty = load_label(args.data_dir / label)
         sequences.extend(seqs)
         y_list.extend([index] * len(seqs))
+        group_list.extend(f"{label}/{g}" for g in groups)
         all_skipped.extend(f"{label}/{m}" for m in skipped)
         if n_empty:
             empty_by_label[label] = n_empty
-        print(f"  [{index}] {label:<20} {len(seqs):>4} sample(s)")
+        n_videos = len(set(groups))
+        print(f"  [{index}] {label:<20} {len(seqs):>4} sample(s) from {n_videos} video(s)")
 
     if all_skipped:
         print(f"\nSkipped {len(all_skipped)} malformed file(s):")
@@ -133,31 +141,48 @@ def main() -> None:
     X = np.stack(sequences).astype(np.float32)
     y = np.asarray(y_list, dtype=np.int64)
 
+    groups = np.asarray(group_list)
     counts = Counter(y.tolist())
-    too_few = [labels[i] for i, c in counts.items() if c < 2]
-    if too_few:
-        sys.exit(
-            "\nCannot make a stratified split: these labels have fewer than 2 "
-            f"samples: {', '.join(sorted(too_few))}.\nRecord more, or remove them."
-        )
 
     if len(labels) < 2:
         print("\nWarning: only one label — a classifier needs at least two.")
 
-    # Guarantee at least one validation sample per class; train_test_split
-    # rounds the split size down and would otherwise starve small classes.
-    min_count = min(counts.values())
-    if int(round(min_count * args.val_split)) < 1:
-        needed = np.ceil(len(labels) / args.val_split).astype(int)
+    # ------------------------------------------------------------------
+    # Split by SOURCE VIDEO, never by window.
+    #
+    # Windows from one video overlap heavily, so a random split puts near
+    # duplicates of the same frames on both sides and reports accuracy that
+    # is really memorisation. Holding out whole videos makes validation
+    # answer the question that matters: does this transfer to a signer the
+    # model has never seen?
+    # ------------------------------------------------------------------
+    rng = np.random.default_rng(args.seed)
+    val_mask = np.zeros(len(y), bool)
+    single_video = []
+
+    for index, label in enumerate(labels):
+        rows = np.flatnonzero(y == index)
+        label_videos = sorted(set(groups[rows]))
+        if len(label_videos) < 2:
+            single_video.append(label)
+            continue
+        n_val = max(1, int(round(len(label_videos) * args.val_split)))
+        n_val = min(n_val, len(label_videos) - 1)  # always keep one for training
+        chosen = rng.choice(label_videos, size=n_val, replace=False)
+        val_mask |= np.isin(groups, chosen)
+
+    if single_video:
         print(
-            f"\nWarning: smallest class has {min_count} sample(s); at "
-            f"val_split={args.val_split} some classes may be absent from the "
-            f"validation set. ~{needed} total samples would be safer."
+            "\nWarning: only one source video for: " + ", ".join(single_video) +
+            "\n  Those samples all go to training — validation cannot measure them."
+            "\n  Add another video (or your own recordings) for a real score."
         )
 
-    X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=args.val_split, random_state=args.seed, stratify=y
-    )
+    X_train, y_train = X[~val_mask], y[~val_mask]
+    X_val, y_val = X[val_mask], y[val_mask]
+
+    if len(X_val) == 0:
+        sys.exit("\nNo validation samples — every class has a single source video.")
 
     out_dir.mkdir(parents=True, exist_ok=True)
     np.save(out_dir / "X_train.npy", X_train)
@@ -173,6 +198,8 @@ def main() -> None:
     train_counts = Counter(y_train.tolist())
     val_counts = Counter(y_val.tolist())
 
+    held_out = sorted(set(groups[val_mask]))
+    print(f"\nHeld-out videos (validation): {', '.join(held_out)}")
     print(f"\nWrote to {out_dir}")
     print(f"  X_train {X_train.shape}  y_train {y_train.shape}")
     print(f"  X_val   {X_val.shape}  y_val   {y_val.shape}")

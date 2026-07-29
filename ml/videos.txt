@@ -1,18 +1,26 @@
-# Source videos for the shipped vocabulary — one "<label> <youtube-id>" per line.
-# ISL dictionary clips by ISLRTC, Goa Board of Education, DEAF TV (via YouTube).
+# Fallback source videos: public ISL dictionary clips on YouTube.
+#
+# NOT the training source for the shipped model — that is the INCLUDE dataset
+# (see README "Retraining"), which has 21 different signers per word and is
+# what makes recognition generalize. These single-signer dictionary clips are
+# kept because they are easy to fetch and useful for adding a quick extra
+# word, but a class built only from these will memorise the signer.
+#
 # Fetch with: python ml/fetch_videos.py --out <dir>
+
 hello WwY0qpr4xNA
-hello 57SGMrmBuCw
-hello WlEzHyVE2JY
-hello I4yOmzNgCQY
-hello yBQA3coUjH0
+hello bloDHPyV7IE
 thanks pppYaxq1PSw
-thanks wK8amEJAK1Y
-thanks JZuKYFjc8eE
+thanks Fxs-FYJWBu4
 please 5MeGjQx2Ueo
+please PXjDHKaSGOc
 help CaWC4P765V8
-help Z973_rG04kU
+help nGmoO_pFKuM
 eat 9kh-Xk48Zfw
+eat 3_1CH1ziwng
 bye oMm-2gWYtb4
+bye Y6-VO-o6-Gg
 sorry RQ9YIUy1fAU
+sorry As_KaGhmcdM
 come LUOr9xb8RiA
+come coh0WpgoCJM

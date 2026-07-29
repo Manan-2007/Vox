@@ -16,11 +16,11 @@ const AIMS = [
 ];
 
 const DONE = [
-  "Live hand tracking in the browser at 15 FPS — MediaPipe in a Web Worker, so the page never stutters.",
-  "Isolated-sign recognition over a 2-second window (LSTM), gated on confidence and stability before a word is accepted.",
+  "Live holistic tracking in the browser at 15 FPS — hands and upper body, MediaPipe in a Web Worker, rendered as a 3D skeleton.",
+  "Isolated-sign recognition over a 2-second window (LSTM) — 100% on held-out signers it never trained on, gated on confidence and stability.",
   "Sentences build word by word and are spoken aloud — with voice output fully optional.",
   "Spoken or typed replies are glossed into ISL tokens and played back as sign clips, with a queue.",
-  "Ships working: the recognition model is trained on public ISL dictionary videos (ISLRTC, Goa Board of Education) and included in the repo.",
+  "Ships working: trained on the INCLUDE ISL dataset (21 different signers per word) and included in the repo.",
   "Privacy by construction: video never leaves the machine; only 126 landmark numbers per frame cross a local socket.",
   "Graceful degradation: backend reconnects automatically; every capability (mic, voice, clips) has a fallback.",
 ];
@@ -50,22 +50,22 @@ const STEPS = [
  * data collection, so the recorded form is always the ground truth.
  */
 const SIGNS = [
-  { word: "hello", glyph: "👋", how: "Open hand raised beside the head, palm out — a small wave." },
-  { word: "thanks", glyph: "🙏", how: "Flat hand at the chin moving forward, or palms pressed together." },
-  { word: "sorry", glyph: "✊", how: "A closed fist circling over the chest." },
-  { word: "come", glyph: "🫴", how: "Open hand, palm up, pulling in toward the body." },
-  { word: "please", glyph: "🤲", how: "Flat hand circling over the chest." },
-  { word: "help", glyph: "🤝", how: "One fist resting on the opposite flat palm, both lifted together." },
-  { word: "eat", glyph: "🤌", how: "Fingertips bunched, tapping toward the mouth." },
-  { word: "bye", glyph: "🖐️", how: "Raised open hand, fingers folding down and up — a goodbye wave." },
+  { word: "hello", label: "Hello", glyph: "\u{1F44B}", how: "Open hand raised beside the head, palm forward." },
+  { word: "howareyou", label: "How are you", glyph: "\u{1F932}", how: "Both hands open, turning outward in a questioning gesture." },
+  { word: "thankyou", label: "Thank you", glyph: "\u{1F64F}", how: "Flat hand from the chin, moving forward and down." },
+  { word: "pleased", label: "Pleased", glyph: "\u{1F60A}", how: "Flat hand brushing upward on the chest." },
+  { word: "alright", label: "Alright", glyph: "\u{1F44C}", how: "Thumb and index forming a ring, held up briefly." },
+  { word: "goodmorning", label: "Good morning", glyph: "\u{1F305}", how: "\u201cGood\u201d, then a forearm rising like a sunrise." },
 ];
 
 const PHRASES = [
-  "Hello, thanks for your help",
-  "Please help me",
-  "Come, eat",
-  "Sorry, bye",
+  "Hello, how are you",
+  "Good morning",
+  "Thank you",
+  "Pleased to meet you",
 ];
+
+
 
 export function LandingPage() {
   return (
@@ -129,10 +129,12 @@ export function LandingPage() {
                 ))}
               </ul>
               <p className="disclaimer" style={{ marginTop: 14 }}>
-                Today Vox recognizes a small, fixed vocabulary of isolated
-                signs, trained on public ISL dictionary clips. It is a working
-                proof of the pipeline, not a general ISL translator — signing
-                close to the dictionary form is what it understands best.
+                Today Vox recognizes six greeting signs, each trained on 21
+                different signers. It is a working proof of the pipeline, not
+                a general ISL translator. Four further time-of-day greetings
+                were trained and then dropped: they share a handshape and the
+                model could not tell them apart reliably, so shipping them
+                would have meant shipping wrong answers.
               </p>
             </article>
           </div>
@@ -157,17 +159,17 @@ export function LandingPage() {
             {SIGNS.map((sign) => (
               <article key={sign.word} className="sign-card">
                 <span className="sign-card__glyph" aria-hidden>{sign.glyph}</span>
-                <span className="sign-card__word">{sign.word}</span>
+                <span className="sign-card__word">{sign.label}</span>
                 <span className="sign-card__how">{sign.how}</span>
               </article>
             ))}
           </div>
           <p className="disclaimer">
             Descriptions are rough cues only — the real reference is in the
-            app: type a word in the Speech → ISL panel and{" "}
-            <strong>watch the actual clip Vox was trained on</strong>, then
-            copy it. ISL varies by region; the clip's form is the one the
-            model knows.
+            app: type the phrase in the Speech → ISL panel and{" "}
+            <strong>watch the actual clip Vox was trained on</strong>, plus
+            its 3D motion, then copy it. ISL varies by region; the clip's form
+            is the one the model knows.
           </p>
         </section>
 

@@ -10,10 +10,15 @@ preprocess/train/inference time, never here.
 THE 126-FLOAT FRAME CONTRACT  --  the frontend must reproduce this EXACTLY
 ================================================================================
 
-Layout, per frame:
+Layout, per frame (141 floats):
 
     [  0 : 63 ]  Left  hand: 21 landmarks x (x, y, z)
     [ 63 :126 ]  Right hand: 21 landmarks x (x, y, z)
+    [126 :141 ]  Pose: nose, L shoulder, R shoulder, L elbow, R elbow (5 x xyz)
+
+  - The pose block is the body anchor. ml/normalize.py places the hands in
+    "signing space" relative to the shoulders, which is what preserves WHERE a
+    sign happens and HOW it moves. Without it the hands carry only shape.
 
   - Landmarks stay in MediaPipe's own order (0 = wrist ... 20 = pinky tip) and in
     its normalized coordinate space: x, y in [0, 1] relative to image width and
@@ -69,8 +74,14 @@ HAND_ORDER = ("Left", "Right")  # block order; index 0 -> floats 0:63, 1 -> 63:1
 LANDMARKS_PER_HAND = 21
 COORDS_PER_LANDMARK = 3  # x, y, z
 FEATURES_PER_HAND = LANDMARKS_PER_HAND * COORDS_PER_LANDMARK  # 63
-FEATURE_DIM = FEATURES_PER_HAND * len(HAND_ORDER)  # 126
-SEQUENCE_LENGTH = 30
+HANDS_DIM = FEATURES_PER_HAND * len(HAND_ORDER)  # 126
+# Pose points appended after the hands: nose, L/R shoulder, L/R elbow. They are
+# the body anchor normalize.py uses to place hands in signing space.
+POSE_LANDMARK_INDICES = (0, 11, 12, 13, 14)
+POSE_DIM = len(POSE_LANDMARK_INDICES) * COORDS_PER_LANDMARK  # 15
+FEATURE_DIM = HANDS_DIM + POSE_DIM  # 141
+# window length lives in normalize.py so every side agrees
+from normalize import SEQUENCE_LENGTH  # noqa: E402
 
 # --- paths -------------------------------------------------------------------
 ML_DIR = Path(__file__).resolve().parent
@@ -80,6 +91,11 @@ MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/hand_landmarker/"
     "hand_landmarker/float16/1/hand_landmarker.task"
 )
+DEFAULT_POSE_MODEL_PATH = ML_DIR / "models" / "pose_landmarker_lite.task"
+POSE_MODEL_URL = (
+    "https://storage.googleapis.com/mediapipe-models/pose_landmarker/"
+    "pose_landmarker_lite/float16/1/pose_landmarker_lite.task"
+)
 
 # --- drawing -----------------------------------------------------------------
 # BGR. Distinct per block so you can see which 63 floats a hand is filling.
@@ -88,13 +104,31 @@ IDLE_COLOR = (200, 200, 200)
 REC_COLOR = (0, 0, 255)
 
 
-def build_frame_vector(result) -> np.ndarray:
-    """Flatten one HandLandmarkerResult into the 126-float frame vector.
+def build_pose_block(pose_result) -> np.ndarray:
+    """The 15-float pose block: nose, L/R shoulder, L/R elbow, in xyz."""
+    block = np.zeros(POSE_DIM, dtype=np.float32)
+    if not pose_result or not pose_result.pose_landmarks:
+        return block
+    landmarks = pose_result.pose_landmarks[0]
+    for slot, index in enumerate(POSE_LANDMARK_INDICES):
+        if index >= len(landmarks):
+            continue
+        lm = landmarks[index]
+        base = slot * COORDS_PER_LANDMARK
+        block[base] = lm.x
+        block[base + 1] = lm.y
+        block[base + 2] = lm.z
+    return block
+
+
+def build_frame_vector(result, pose_result=None) -> np.ndarray:
+    """Flatten hand (and pose) results into the 141-float frame vector.
 
     See the module docstring for the layout. This is the single place the
     ordering and zero-padding rules are implemented; the frontend mirrors it.
     """
     vec = np.zeros(FEATURE_DIM, dtype=np.float32)
+    vec[HANDS_DIM:] = build_pose_block(pose_result)
     if not result.hand_landmarks:
         return vec
 
@@ -121,6 +155,17 @@ def build_frame_vector(result) -> np.ndarray:
             vec[base + 1] = lm.y
             vec[base + 2] = lm.z
     return vec
+
+
+def ensure_pose_model(path: Path) -> Path:
+    """Download the PoseLandmarker bundle on first run."""
+    if path.exists():
+        return path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"Pose model not found at {path}\nDownloading from {POSE_MODEL_URL} ...")
+    urllib.request.urlretrieve(POSE_MODEL_URL, path)
+    print(f"Saved {path.stat().st_size / 1e6:.1f} MB\n")
+    return path
 
 
 def filled_blocks(vec: np.ndarray) -> dict[str, bool]:
@@ -248,12 +293,18 @@ def main() -> None:
     saved = len(list(out_dir.glob("*.npy")))
 
     model_path = ensure_model(args.model)
+    pose_model_path = ensure_pose_model(DEFAULT_POSE_MODEL_PATH)
     print_instructions(label, out_dir, saved)
 
     options = vision.HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=str(model_path)),
         running_mode=vision.RunningMode.VIDEO,
         num_hands=2,
+    )
+    pose_options = vision.PoseLandmarkerOptions(
+        base_options=BaseOptions(model_asset_path=str(pose_model_path)),
+        running_mode=vision.RunningMode.VIDEO,
+        num_poses=1,
     )
 
     cap = open_camera(args.camera)
@@ -265,7 +316,8 @@ def main() -> None:
     timestamp_ms = 0  # must increase strictly for RunningMode.VIDEO
 
     try:
-        with vision.HandLandmarker.create_from_options(options) as landmarker:
+        with vision.HandLandmarker.create_from_options(options) as landmarker, \
+             vision.PoseLandmarker.create_from_options(pose_options) as pose_landmarker:
             while True:
                 ok, frame = cap.read()
                 if not ok:
@@ -274,12 +326,12 @@ def main() -> None:
 
                 # Detect on the RAW frame — see contract note (1).
                 rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                result = landmarker.detect_for_video(
-                    mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb), timestamp_ms
-                )
+                image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+                result = landmarker.detect_for_video(image, timestamp_ms)
+                pose_result = pose_landmarker.detect_for_video(image, timestamp_ms)
                 timestamp_ms += 33  # ~30 fps; only monotonicity matters
 
-                vec = build_frame_vector(result)
+                vec = build_frame_vector(result, pose_result)
                 if recording:
                     buffer.append(vec)
 

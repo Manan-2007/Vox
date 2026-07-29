@@ -8,12 +8,21 @@
  * The vector is built with the SAME buildFrameVector as before — the module is
  * imported, not copied, so the byte-for-byte contract with ml/collect.py is
  * untouched by the move off the main thread.
+ *
+ * Module worker + a wasm-loader shim. tasks-vision loads its glue via
+ * importScripts, which module workers do not have, so createFromOptions would
+ * fail with "ModuleFactory not set." A classic worker has importScripts, but
+ * Vite only honours worker.format on BUILD — its dev server serves workers as
+ * ESM regardless, so classic works in production and breaks in dev. Hence the
+ * shim below, which works in both.
  */
 /// <reference lib="webworker" />
 import {
   FilesetResolver,
   HandLandmarker,
+  PoseLandmarker,
   type HandLandmarkerResult,
+  type PoseLandmarkerResult,
 } from "@mediapipe/tasks-vision";
 import { buildFrameVector } from "../landmarks";
 
@@ -21,6 +30,7 @@ export interface InitMessage {
   type: "init";
   wasmPath: string;
   modelPath: string;
+  poseModelPath: string;
 }
 export interface FrameMessage {
   type: "frame";
@@ -52,6 +62,7 @@ export interface ErrorMessage {
 export type WorkerOutMessage = ReadyMessage | ResultMessage | ErrorMessage;
 
 let landmarker: HandLandmarker | null = null;
+let poseLandmarker: PoseLandmarker | null = null;
 
 const post = (msg: WorkerOutMessage, transfer: Transferable[] = []) =>
   (self as unknown as DedicatedWorkerGlobalScope).postMessage(msg, transfer);
@@ -59,32 +70,58 @@ const post = (msg: WorkerOutMessage, transfer: Transferable[] = []) =>
 async function init(msg: InitMessage) {
   const fileset = await FilesetResolver.forVisionTasks(msg.wasmPath);
 
-  // tasks-vision loads its wasm glue with importScripts, which module workers
-  // don't have — createFromOptions then dies with "ModuleFactory not set."
-  // Load the exact loader the resolver selected (simd/nosimd) ourselves.
-  // Indirect eval runs it in the worker's global scope, where the glue
-  // registers self.ModuleFactory just as importScripts would have.
-  if (!("ModuleFactory" in self)) {
-    const loaderSource = await (await fetch(fileset.wasmLoaderPath)).text();
+  // Fetch the exact loader the resolver chose (simd / nosimd) and evaluate it
+  // into worker scope, where it registers self.ModuleFactory the way
+  // importScripts would have.
+  //
+  // Each createFromOptions CONSUMES the factory, and it is not reliably
+  // removed from globalThis afterwards — so prime UNCONDITIONALLY (deleting
+  // any stale value first) before every task. Guarding with
+  // `if (!("ModuleFactory" in self))` silently skips the re-prime and the
+  // second task fails, taking hand tracking down with it.
+  const loaderSource = await (await fetch(fileset.wasmLoaderPath)).text();
+  const primeModuleFactory = () => {
+    try {
+      delete (self as unknown as Record<string, unknown>).ModuleFactory;
+    } catch {
+      /* non-configurable in some engines; the eval below still overwrites it */
+    }
     (0, eval)(loaderSource);
-  }
+  };
+
   const base = {
     baseOptions: { modelAssetPath: msg.modelPath },
     numHands: 2,
     runningMode: "VIDEO" as const,
   };
+  const poseBase = {
+    baseOptions: { modelAssetPath: msg.poseModelPath },
+    numPoses: 1,
+    runningMode: "VIDEO" as const,
+  };
+
+  const createBoth = async (delegate: "GPU" | "CPU") => {
+    primeModuleFactory();
+    const hands = await HandLandmarker.createFromOptions(fileset, {
+      ...base,
+      baseOptions: { ...base.baseOptions, delegate },
+    });
+    primeModuleFactory();
+    const pose = await PoseLandmarker.createFromOptions(fileset, {
+      ...poseBase,
+      baseOptions: { ...poseBase.baseOptions, delegate },
+    });
+    return [hands, pose] as const;
+  };
+
   let delegate: "GPU" | "CPU" = "GPU";
   try {
-    landmarker = await HandLandmarker.createFromOptions(fileset, {
-      ...base,
-      baseOptions: { ...base.baseOptions, delegate: "GPU" },
-    });
+    [landmarker, poseLandmarker] = await createBoth("GPU");
   } catch {
     delegate = "CPU";
-    landmarker = await HandLandmarker.createFromOptions(fileset, {
-      ...base,
-      baseOptions: { ...base.baseOptions, delegate: "CPU" },
-    });
+    landmarker?.close();
+    landmarker = null;
+    [landmarker, poseLandmarker] = await createBoth("CPU");
   }
   post({ type: "ready", delegate });
 }
@@ -99,9 +136,14 @@ function detect(msg: FrameMessage) {
     msg.bitmap,
     msg.timestamp,
   );
+  // The pose block is the body anchor normalization needs — without it every
+  // frame normalizes to zeros and the model sees nothing.
+  const pose: PoseLandmarkerResult | null = poseLandmarker
+    ? poseLandmarker.detectForVideo(msg.bitmap, msg.timestamp)
+    : null;
   msg.bitmap.close();
 
-  const vector = buildFrameVector(result);
+  const vector = buildFrameVector(result, pose);
   post(
     {
       type: "result",
@@ -130,7 +172,9 @@ self.onmessage = (event: MessageEvent<WorkerInMessage>) => {
     else if (msg.type === "frame") detect(msg);
     else if (msg.type === "close") {
       landmarker?.close();
+      poseLandmarker?.close();
       landmarker = null;
+      poseLandmarker = null;
     }
   } catch (err) {
     post({

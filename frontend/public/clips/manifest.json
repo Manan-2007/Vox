@@ -1,13 +1,11 @@
 {
-  "_readme": "Speech -> ISL clip library. Real ISL dictionary clips (ISLRTC / Goa Board of Education / DEAF TV, via YouTube) trimmed to the signing segment - the same videos the recognition model was trained on, so mimicking a clip produces the form the model knows. Keys are gloss words; values are files in this directory.",
+  "_readme": "ISL playback clips from the INCLUDE dataset (CC-BY-4.0, https://zenodo.org/records/4010759) - the same recordings the model was trained on, trimmed to the signing segment, 15fps. Copy the clip and you are signing the form the model knows.",
   "clips": {
-    "bye": "bye.webm",
-    "come": "come.webm",
-    "eat": "eat.webm",
+    "alright": "alright.webm",
+    "goodmorning": "goodmorning.webm",
     "hello": "hello.webm",
-    "help": "help.webm",
-    "please": "please.webm",
-    "sorry": "sorry.webm",
-    "thanks": "thanks.webm"
+    "howareyou": "howareyou.webm",
+    "pleased": "pleased.webm",
+    "thankyou": "thankyou.webm"
   }
 }

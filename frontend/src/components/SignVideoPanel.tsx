@@ -13,6 +13,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Orb, type OrbState } from "./Orb";
+import { SignAvatar3D } from "./SignAvatar3D";
 import type { IslQueue } from "../isl/useIslQueue";
 import type { SpeechRecognitionState } from "../hooks/useSpeechRecognition";
 
@@ -28,6 +29,8 @@ interface Props {
   ttsSpeaking: boolean;
   /** Timestamp of the last recognized sign word (for the happy hop). */
   lastWordAt: number | null;
+  /** Reference motion for the clip playing now, if it has been extracted. */
+  replayFrame: Float32Array | null;
 }
 
 export function SignVideoPanel({
@@ -36,6 +39,7 @@ export function SignVideoPanel({
   onPhrase,
   ttsSpeaking,
   lastWordAt,
+  replayFrame,
 }: Props) {
   const { manifest, queue, nowPlaying, paused, lastUnmatched, next, togglePause, clearQueue } = isl;
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -149,6 +153,12 @@ export function SignVideoPanel({
 
           {nowPlaying && (
             <span className="isl__now">{nowPlaying.word}</span>
+          )}
+
+          {showVideo && replayFrame && (
+            <div className="isl__avatar" title="the same sign as 3D motion">
+              <SignAvatar3D frame={replayFrame} height={110} />
+            </div>
           )}
         </div>
 

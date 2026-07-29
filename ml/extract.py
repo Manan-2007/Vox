@@ -39,10 +39,12 @@ from mediapipe.tasks.python import vision
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from collect import (  # noqa: E402
     DEFAULT_MODEL_PATH,
+    DEFAULT_POSE_MODEL_PATH,
     FEATURE_DIM,
     SEQUENCE_LENGTH,
     build_frame_vector,
     ensure_model,
+    ensure_pose_model,
 )
 
 ML_DIR = Path(__file__).resolve().parent
@@ -50,8 +52,8 @@ TARGET_FPS = 15.0
 MIN_HAND_RATIO = 0.7  # a window must have hands in at least this share of frames
 
 
-def video_to_frames(path: Path, landmarker) -> np.ndarray:
-    """Run hand landmarks over a video at ~15 FPS. Returns (T, 126) raw."""
+def video_to_frames(path: Path, landmarker, pose_landmarker) -> np.ndarray:
+    """Run hand + pose landmarks over a video at ~15 FPS. Returns (T, 141) raw."""
     cap = cv2.VideoCapture(str(path))
     if not cap.isOpened():
         raise RuntimeError(f"cannot open {path}")
@@ -67,12 +69,19 @@ def video_to_frames(path: Path, landmarker) -> np.ndarray:
         if not ok:
             break
         if frame_index % step == 0:
+            # 1080p source clips: downscale before detection. MediaPipe works
+            # on normalized coordinates, so this changes nothing downstream
+            # and is several times faster.
+            if frame.shape[1] > 960:
+                scale = 960 / frame.shape[1]
+                frame = cv2.resize(frame, None, fx=scale, fy=scale,
+                                   interpolation=cv2.INTER_AREA)
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            result = landmarker.detect_for_video(
-                mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb), timestamp_ms
-            )
+            image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
+            result = landmarker.detect_for_video(image, timestamp_ms)
+            pose_result = pose_landmarker.detect_for_video(image, timestamp_ms)
             timestamp_ms += 67  # ~15 FPS spacing; only monotonicity matters
-            vectors.append(build_frame_vector(result))
+            vectors.append(build_frame_vector(result, pose_result))
         frame_index += 1
     cap.release()
 
@@ -82,8 +91,12 @@ def video_to_frames(path: Path, landmarker) -> np.ndarray:
 
 
 def signing_segment(frames: np.ndarray) -> tuple[int, int]:
-    """[start, end) span from first to last frame with any hand visible."""
-    present = frames.any(axis=1)
+    """[start, end) span from first to last frame with any HAND visible.
+
+    Hands only: the pose block is filled in almost every frame (the signer is
+    always on camera), so including it would never trim anything.
+    """
+    present = frames[:, :126].any(axis=1)
     if not present.any():
         return 0, 0
     indices = np.flatnonzero(present)
@@ -100,8 +113,17 @@ def stretch_to(frames: np.ndarray, length: int) -> np.ndarray:
     # interpolation between an empty and a hand frame is neither — keep hard
     # emptiness from the nearer source frame
     nearest = np.where(frac[:, 0] < 0.5, lo, hi)
-    out[~frames.any(axis=1)[nearest]] = 0.0
+    out[~frames[:, :126].any(axis=1)[nearest], :126] = 0.0
     return out.astype(np.float32)
+
+
+def evenly_sample(items: list, cap: int) -> list:
+    """At most `cap` items, evenly spaced — keeps clip coverage without letting
+    a long video contribute 20x more (near-identical) windows than a short one."""
+    if cap <= 0 or len(items) <= cap:
+        return items
+    idx = np.linspace(0, len(items) - 1, cap).round().astype(int)
+    return [items[i] for i in sorted(set(idx.tolist()))]
 
 
 def windows_from(frames: np.ndarray, stride: int) -> list[np.ndarray]:
@@ -119,7 +141,7 @@ def windows_from(frames: np.ndarray, stride: int) -> list[np.ndarray]:
     out = []
     for offset in range(0, len(segment) - SEQUENCE_LENGTH + 1, stride):
         window = segment[offset : offset + SEQUENCE_LENGTH]
-        if window.any(axis=1).mean() >= MIN_HAND_RATIO:
+        if window[:, :126].any(axis=1).mean() >= MIN_HAND_RATIO:
             out.append(window.astype(np.float32))
     return out
 
@@ -130,18 +152,29 @@ def main() -> None:
                         help="directory of <label>__<id>.mp4 files")
     parser.add_argument("--data-dir", type=Path, default=ML_DIR / "data")
     parser.add_argument("--stride", type=int, default=2)
+    parser.add_argument("--max-per-video", type=int, default=10,
+                        help="cap windows kept per video (0 = no cap)")
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL_PATH)
     args = parser.parse_args()
 
-    videos = sorted(args.videos_dir.glob("*.mp4")) + sorted(args.videos_dir.glob("*.webm"))
+    videos = sorted(
+        v for pattern in ("*.mp4", "*.webm", "*.mov", "*.MOV", "*.avi")
+        for v in args.videos_dir.glob(pattern)
+    )
     if not videos:
         sys.exit(f"no videos in {args.videos_dir} (expected <label>__<id>.mp4)")
 
     model_path = ensure_model(args.model)
+    pose_model_path = ensure_pose_model(DEFAULT_POSE_MODEL_PATH)
     options = vision.HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=str(model_path)),
         running_mode=vision.RunningMode.VIDEO,
         num_hands=2,
+    )
+    pose_options = vision.PoseLandmarkerOptions(
+        base_options=BaseOptions(model_asset_path=str(pose_model_path)),
+        running_mode=vision.RunningMode.VIDEO,
+        num_poses=1,
     )
 
     counts: dict[str, int] = defaultdict(int)
@@ -153,11 +186,12 @@ def main() -> None:
 
         # One landmarker per video: VIDEO mode carries tracking state between
         # frames, which must not leak from one clip into the next.
-        with vision.HandLandmarker.create_from_options(options) as landmarker:
-            frames = video_to_frames(video, landmarker)
+        with vision.HandLandmarker.create_from_options(options) as landmarker, \
+             vision.PoseLandmarker.create_from_options(pose_options) as pose_landmarker:
+            frames = video_to_frames(video, landmarker, pose_landmarker)
 
         start, end = signing_segment(frames)
-        samples = windows_from(frames, args.stride)
+        samples = evenly_sample(windows_from(frames, args.stride), args.max_per_video)
 
         out_dir = args.data_dir / label
         out_dir.mkdir(parents=True, exist_ok=True)

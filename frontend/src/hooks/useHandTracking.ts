@@ -42,6 +42,8 @@ export interface HandTracking {
   fps: number;
   /** Worker-side inference time for the latest frame, ms. */
   inferMs: number;
+  /** Latest raw 141-float frame, for the 3D avatar. */
+  frame: Float32Array | null;
   /** Cameras available; labels populate once permission is granted. */
   devices: MediaDeviceInfo[];
   /** Switch camera; pass a deviceId from `devices`. */
@@ -66,6 +68,7 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
   const [error, setError] = useState<string | null>(null);
   const [delegate, setDelegate] = useState<"GPU" | "CPU" | null>(null);
   const [handsVisible, setHandsVisible] = useState(0);
+  const [frame, setFrame] = useState<Float32Array | null>(null);
   const [fps, setFps] = useState(0);
   const [inferMs, setInferMs] = useState(0);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
@@ -81,6 +84,14 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
       { type: "module" },
     );
     workerRef.current = worker;
+
+    // A worker that fails to parse or throws at top level posts no message at
+    // all — without this the UI sits on "Loading hand landmarker" forever.
+    worker.onerror = (event) => {
+      const detail = event.message || "worker failed to start";
+      setError(`Hand tracking failed: ${detail}`);
+      setStatus("stopped");
+    };
 
     worker.onmessage = (event: MessageEvent<WorkerOutMessage>) => {
       const msg = event.data;
@@ -129,6 +140,9 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
         setHandsVisible(msg.landmarks.length);
       }
 
+      // vector.buffer is transferred, so hand a copy to the avatar before the
+      // socket call consumes it
+      setFrame(Float32Array.from(msg.vector));
       onVectorRef.current(msg.vector);
     };
 
@@ -137,6 +151,7 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
       type: "init",
       wasmPath: `${location.origin}/mediapipe/wasm`,
       modelPath: `${location.origin}/models/hand_landmarker.task`,
+      poseModelPath: `${location.origin}/models/pose_landmarker_lite.task`,
     };
     worker.postMessage(init);
 
@@ -266,6 +281,7 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
     handsVisible,
     fps,
     inferMs,
+    frame,
     devices,
     selectCamera,
     cameraId,
