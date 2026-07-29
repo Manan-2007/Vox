@@ -23,14 +23,14 @@ const SYNONYMS: Record<string, string> = {
   hey: "hello",
   thank: "thanks",
   thankyou: "thanks",
-  ok: "yes",
-  okay: "yes",
-  yeah: "yes",
-  yep: "yes",
-  nope: "no",
   food: "eat",
   eating: "eat",
   goodbye: "bye",
+  goodby: "bye",
+  coming: "come",
+  apologies: "sorry",
+  apologise: "sorry",
+  apologize: "sorry",
 };
 
 export interface GlossToken {

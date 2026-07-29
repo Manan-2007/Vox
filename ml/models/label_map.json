@@ -1,0 +1,22 @@
+{
+  "labels": [
+    "bye",
+    "come",
+    "eat",
+    "hello",
+    "help",
+    "please",
+    "sorry",
+    "thanks"
+  ],
+  "label_to_index": {
+    "bye": 0,
+    "come": 1,
+    "eat": 2,
+    "hello": 3,
+    "help": 4,
+    "please": 5,
+    "sorry": 6,
+    "thanks": 7
+  }
+}

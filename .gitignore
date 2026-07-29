@@ -12,10 +12,11 @@ frontend/dist/
 frontend/public/mediapipe/
 frontend/public/models/
 
-# ML artifacts (data and trained models are not versioned)
+# ML artifacts. Raw data and the MediaPipe bundle are regenerated
+# (ml/fetch_videos.py + ml/extract.py; collect.py downloads the bundle), but
+# the small trained model SHIPS so the product works out of the box.
 ml/data/
-ml/models/
-*.keras
+ml/models/hand_landmarker.task
 
 # OS / editor
 .DS_Store

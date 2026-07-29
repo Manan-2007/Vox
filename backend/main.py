@@ -158,11 +158,17 @@ async def websocket_endpoint(websocket: WebSocket):
     model = app.state.model
     labels = app.state.labels
     if model is None:
-        await websocket.send_json(
-            {"error": "no model loaded — train one first (see /health)"}
-        )
-        await websocket.close(code=1011)
-        return
+        # Stay connected: the speech->ISL half of the app works without a
+        # model, and closing here put the frontend into a reconnect loop that
+        # made the whole product look dead. Tell the client once, then answer
+        # every frame with the same status instead of predictions.
+        await websocket.send_json({"status": "no-model"})
+        try:
+            while True:
+                await websocket.receive_text()
+                await websocket.send_json({"status": "no-model"})
+        except WebSocketDisconnect:
+            return
 
     client = f"{websocket.client.host}:{websocket.client.port}" if websocket.client else "?"
     log.info("client connected: %s", client)

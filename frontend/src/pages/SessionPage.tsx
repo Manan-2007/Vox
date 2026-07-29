@@ -94,7 +94,7 @@ export function SessionPage() {
   useEffect(() => () => window.clearTimeout(pauseTimer.current), []);
 
   /* ------------------------------------------------------- socket + cam -- */
-  const { socket, live, buffered, error, send, setThreshold } =
+  const { socket, live, buffered, error, noModel, send, setThreshold } =
     useVoxSocket(handleWord);
   const tracking = useHandTracking(send);
 
@@ -129,6 +129,14 @@ export function SessionPage() {
 
         <div className="topbar__status">
           {error && <span className="badge badge--error">{error}</span>}
+          {noModel && (
+            <span
+              className="badge badge--error"
+              title="The backend is running but ml/models/vox_lstm.keras is missing. Run: python ml/extract.py --videos-dir <videos> && python ml/preprocess.py && python ml/train.py"
+            >
+              recognition off — no model
+            </span>
+          )}
           <button
             type="button"
             className={`button voice-toggle ${voiceOn && speech.supported ? "voice-toggle--on" : ""}`}

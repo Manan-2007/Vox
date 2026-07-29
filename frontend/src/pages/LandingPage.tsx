@@ -20,6 +20,7 @@ const DONE = [
   "Isolated-sign recognition over a 2-second window (LSTM), gated on confidence and stability before a word is accepted.",
   "Sentences build word by word and are spoken aloud — with voice output fully optional.",
   "Spoken or typed replies are glossed into ISL tokens and played back as sign clips, with a queue.",
+  "Ships working: the recognition model is trained on public ISL dictionary videos (ISLRTC, Goa Board of Education) and included in the repo.",
   "Privacy by construction: video never leaves the machine; only 126 landmark numbers per frame cross a local socket.",
   "Graceful degradation: backend reconnects automatically; every capability (mic, voice, clips) has a fallback.",
 ];
@@ -44,15 +45,15 @@ const STEPS = [
 ];
 
 /**
- * Starter vocabulary guide. The descriptions are indicative common forms —
+ * Starter vocabulary guide. The descriptions match the dictionary clips Vox was trained on —
  * ISL varies regionally, and the model recognizes signs AS RECORDED during
  * data collection, so the recorded form is always the ground truth.
  */
 const SIGNS = [
   { word: "hello", glyph: "👋", how: "Open hand raised beside the head, palm out — a small wave." },
   { word: "thanks", glyph: "🙏", how: "Flat hand at the chin moving forward, or palms pressed together." },
-  { word: "yes", glyph: "👍", how: "A closed fist nodding at the wrist, like a head nodding." },
-  { word: "no", glyph: "✋", how: "Open hand swinging side to side, palm facing out." },
+  { word: "sorry", glyph: "✊", how: "A closed fist circling over the chest." },
+  { word: "come", glyph: "🫴", how: "Open hand, palm up, pulling in toward the body." },
   { word: "please", glyph: "🤲", how: "Flat hand circling over the chest." },
   { word: "help", glyph: "🤝", how: "One fist resting on the opposite flat palm, both lifted together." },
   { word: "eat", glyph: "🤌", how: "Fingertips bunched, tapping toward the mouth." },
@@ -62,8 +63,8 @@ const SIGNS = [
 const PHRASES = [
   "Hello, thanks for your help",
   "Please help me",
-  "Yes, eat now",
-  "No thanks, bye",
+  "Come, eat",
+  "Sorry, bye",
 ];
 
 export function LandingPage() {
@@ -129,9 +130,9 @@ export function LandingPage() {
               </ul>
               <p className="disclaimer" style={{ marginTop: 14 }}>
                 Today Vox recognizes a small, fixed vocabulary of isolated
-                signs, trained on data collected with its own tool. Accuracy
-                depends on that data — it is a working proof of the pipeline,
-                not a general ISL translator.
+                signs, trained on public ISL dictionary clips. It is a working
+                proof of the pipeline, not a general ISL translator — signing
+                close to the dictionary form is what it understands best.
               </p>
             </article>
           </div>
@@ -162,11 +163,11 @@ export function LandingPage() {
             ))}
           </div>
           <p className="disclaimer">
-            These descriptions are indicative common forms. ISL varies by
-            region, and Vox recognizes each sign <strong>as it was recorded
-            during training</strong> — if your dataset signs “hello”
-            differently, sign it your way. The recorded form is the ground
-            truth.
+            Descriptions are rough cues only — the real reference is in the
+            app: type a word in the Speech → ISL panel and{" "}
+            <strong>watch the actual clip Vox was trained on</strong>, then
+            copy it. ISL varies by region; the clip's form is the one the
+            model knows.
           </p>
         </section>
 

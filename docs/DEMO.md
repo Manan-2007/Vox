@@ -1,7 +1,11 @@
 # Vox — demo script & shot list
 
-Assumes the starter vocabulary (`bye eat hello help no please thanks yes`),
-a trained model, and clips supplied for at least `hello thanks please help`.
+Vocabulary: `bye come eat hello help please sorry thanks`. The model and all
+eight clips ship with the repo — nothing to supply.
+
+**The one trick that makes the demo land:** before signing a word live, type it
+into the Speech → ISL panel and watch its clip — then copy that exact form.
+The model was trained on those clips.
 
 ## Setup (before recording / presenting)
 
@@ -16,10 +20,10 @@ a trained model, and clips supplied for at least `hello thanks please help`.
 |---|--------|------------------------|
 | 1 | Landing page, 5 s | "Vox — a two-way ISL interpreter. Everything runs locally." |
 | 2 | Start a session | Point at the skeleton overlay and FPS chip: "hand tracking in a Web Worker, 15 FPS." |
-| 3 | Sign `hello`, hold ~2 s | Word appears; point at the confidence bar crossing the 85% marker. |
+| 3 | Sign `hello` (copy the clip's form), hold ~2 s | Word appears; point at the confidence bar crossing the 85% marker. |
 | 4 | Sign `please`, then `help` | Sentence builds in the transcript bubble. |
 | 5 | Pause ~4 s | Sentence commits and is **spoken aloud** — "signed · spoken aloud" tag. |
-| 6 | Other person clicks 🎤 and says "hello, thanks for your help" | Bubble lands on the right as "heard"; clips for hello/thanks/help play in sequence in the right panel. |
+| 6 | Other person clicks 🎤 and says "hello, thanks for your help" | Bubble lands on the right as "heard"; real ISL clips for hello/thanks/help play in sequence. |
 | 7 | Sign `bye` → Speak sentence | Close the loop. |
 | 8 | Pull the network cable / kill the backend, 5 s | Badge flips to "Backend closed…", then auto-reconnects when restarted. |
 

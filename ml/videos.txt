@@ -1,0 +1,18 @@
+# Source videos for the shipped vocabulary — one "<label> <youtube-id>" per line.
+# ISL dictionary clips by ISLRTC, Goa Board of Education, DEAF TV (via YouTube).
+# Fetch with: python ml/fetch_videos.py --out <dir>
+hello WwY0qpr4xNA
+hello 57SGMrmBuCw
+hello WlEzHyVE2JY
+hello I4yOmzNgCQY
+hello yBQA3coUjH0
+thanks pppYaxq1PSw
+thanks wK8amEJAK1Y
+thanks JZuKYFjc8eE
+please 5MeGjQx2Ueo
+help CaWC4P765V8
+help Z973_rG04kU
+eat 9kh-Xk48Zfw
+bye oMm-2gWYtb4
+sorry RQ9YIUy1fAU
+come LUOr9xb8RiA

@@ -114,6 +114,12 @@ export function SignVideoPanel({
               playsInline
               onEnded={next}
               onError={() => setMissing(true)}
+              // Chrome pauses muted video in occluded tabs to save power;
+              // resume unless the pause is ours or the clip just ended.
+              onPause={(e) => {
+                const el = e.currentTarget;
+                if (!paused && !el.ended) void el.play().catch(() => {});
+              }}
             />
           )}
 

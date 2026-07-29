@@ -36,6 +36,8 @@ export interface VoxSocket {
   live: LiveGuess | null;
   buffered: { have: number; need: number } | null;
   error: string | null;
+  /** Backend is up but has no trained model — recognition disabled. */
+  noModel: boolean;
   send: (vector: Float32Array) => void;
   /** Set the backend's per-connection confidence threshold (re-sent on reconnect). */
   setThreshold: (value: number) => void;
@@ -52,6 +54,7 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
   const [live, setLive] = useState<LiveGuess | null>(null);
   const [buffered, setBuffered] = useState<{ have: number; need: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [noModel, setNoModel] = useState(false);
 
   useEffect(() => {
     let disposed = false;
@@ -67,6 +70,7 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
         if (disposed) return;
         setSocket("open");
         setError(null);
+        setNoModel(false);
         // A non-default threshold survives reconnects.
         if (thresholdRef.current !== null) {
           ws.send(
@@ -96,6 +100,8 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
           setError(msg.error);
         } else if (msg.status === "config") {
           // ack only — nothing to render
+        } else if (msg.status === "no-model") {
+          setNoModel(true);
         } else if (msg.top !== undefined) {
           setLive({
             top: msg.top,
@@ -139,5 +145,5 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
     }
   }, []);
 
-  return { socket, live, buffered, error, send, setThreshold };
+  return { socket, live, buffered, error, noModel, send, setThreshold };
 }
