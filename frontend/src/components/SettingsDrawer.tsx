@@ -86,7 +86,7 @@ export function SettingsDrawer({
               disabled={!ttsSupported}
             />
             <span className="field__label">
-              Speak sentences aloud
+              Voice output — read finished sentences aloud
               {!ttsSupported && " (unavailable in this browser)"}
             </span>
           </label>

@@ -1,5 +1,9 @@
 /**
- * Right column: speech -> ISL playback (P10).
+ * Right column: speech -> ISL playback, fronted by the Vox orb.
+ *
+ * The orb is the panel's resting face and reacts to real activity — listening
+ * while the mic captures or a phrase is being typed, speaking while TTS reads
+ * a sentence, thinking while clips play, and a happy hop when a sign lands.
  *
  * Spoken (or typed) English is glossed into tokens; tokens with a clip in
  * public/clips/manifest.json queue up and play in sequence. Clips are
@@ -8,23 +12,44 @@
  * to the typed input, which drives the identical pipeline.
  */
 import { useEffect, useRef, useState } from "react";
+import { Orb, type OrbState } from "./Orb";
 import type { IslQueue } from "../isl/useIslQueue";
 import type { SpeechRecognitionState } from "../hooks/useSpeechRecognition";
 
 const MISSING_CLIP_MS = 1400;
+const HAPPY_MS = 900;
 
 interface Props {
   isl: IslQueue;
   recognition: SpeechRecognitionState;
   /** Typed phrases follow the same path as heard speech (transcript + queue). */
   onPhrase: (text: string) => void;
+  /** True while a sentence is being read aloud. */
+  ttsSpeaking: boolean;
+  /** Timestamp of the last recognized sign word (for the happy hop). */
+  lastWordAt: number | null;
 }
 
-export function SignVideoPanel({ isl, recognition, onPhrase }: Props) {
+export function SignVideoPanel({
+  isl,
+  recognition,
+  onPhrase,
+  ttsSpeaking,
+  lastWordAt,
+}: Props) {
   const { manifest, queue, nowPlaying, paused, lastUnmatched, next, togglePause, clearQueue } = isl;
   const videoRef = useRef<HTMLVideoElement>(null);
   const [missing, setMissing] = useState(false);
   const [typed, setTyped] = useState("");
+  const [happy, setHappy] = useState(false);
+
+  /* A recognized sign gives the orb a brief hop. */
+  useEffect(() => {
+    if (lastWordAt === null) return;
+    setHappy(true);
+    const timer = window.setTimeout(() => setHappy(false), HAPPY_MS);
+    return () => window.clearTimeout(timer);
+  }, [lastWordAt]);
 
   // A missing clip file shows a card, then advances on a timer.
   useEffect(() => {
@@ -52,6 +77,20 @@ export function SignVideoPanel({ isl, recognition, onPhrase }: Props) {
   };
 
   const clipCount = manifest ? Object.keys(manifest).length : 0;
+  const showVideo = nowPlaying && !missing;
+
+  /* Orb state: most-specific activity wins. */
+  const orbState: OrbState = recognition.error
+    ? "confused"
+    : happy
+      ? "happy"
+      : ttsSpeaking
+        ? "speaking"
+        : recognition.listening || typed.length > 0
+          ? "listening"
+          : nowPlaying
+            ? "thinking"
+            : "idle";
 
   return (
     <section className="panel panel--video" aria-label="ISL video playback">
@@ -63,8 +102,8 @@ export function SignVideoPanel({ isl, recognition, onPhrase }: Props) {
       </header>
 
       <div className="panel__body panel__body--flush isl">
-        <div className="isl__stage">
-          {nowPlaying && !missing && (
+        <div className={`isl__stage ${showVideo ? "isl__stage--video" : ""}`}>
+          {showVideo && (
             <video
               ref={videoRef}
               key={nowPlaying.id}
@@ -88,11 +127,16 @@ export function SignVideoPanel({ isl, recognition, onPhrase }: Props) {
           )}
 
           {!nowPlaying && (
-            <div className="isl__card isl__card--idle">
+            <div className="isl__card">
+              <Orb state={orbState} size={130} />
               <p className="isl__card-note">
                 {clipCount === 0
                   ? "No clips supplied yet. Add videos to frontend/public/clips/ and list them in manifest.json."
-                  : "Speak or type a phrase to play its signs."}
+                  : orbState === "listening"
+                    ? "Listening…"
+                    : orbState === "speaking"
+                      ? "Speaking the sentence aloud…"
+                      : "Speak or type a phrase to play its signs."}
               </p>
             </div>
           )}

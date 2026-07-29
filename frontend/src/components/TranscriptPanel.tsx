@@ -11,12 +11,14 @@ import { turnText, type Conversation } from "../hooks/useConversation";
 
 interface Props {
   conversation: Conversation;
-  /** Commit the current sentence and (if enabled) speak it. */
+  /** Commit the current sentence and (if voice is on) speak it. */
   onSpeakNow: () => void;
   speaking: boolean;
+  /** Whether committed sentences are voiced — changes the button's promise. */
+  voiceOn: boolean;
 }
 
-export function TranscriptPanel({ conversation, onSpeakNow, speaking }: Props) {
+export function TranscriptPanel({ conversation, onSpeakNow, speaking, voiceOn }: Props) {
   const { turns, current, undoWord } = conversation;
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -44,8 +46,9 @@ export function TranscriptPanel({ conversation, onSpeakNow, speaking }: Props) {
       <div ref={logRef} className="panel__body transcript" role="log" aria-live="polite">
         {isEmpty && (
           <p className="transcript__empty">
-            Sign to begin. Confirmed words build into a sentence; pause, and it
-            is spoken aloud for the other person.
+            Sign to begin. Confirmed words build into a sentence; pause, and
+            it is finished — spoken aloud, or text only. Your choice, in the
+            top bar.
           </p>
         )}
 
@@ -83,7 +86,7 @@ export function TranscriptPanel({ conversation, onSpeakNow, speaking }: Props) {
           onClick={onSpeakNow}
           disabled={current.words.length === 0}
         >
-          Speak sentence
+          {voiceOn ? "Speak sentence" : "Finish sentence"}
         </button>
         <button
           type="button"

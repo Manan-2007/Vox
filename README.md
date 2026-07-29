@@ -4,7 +4,9 @@ Real-time, two-way Indian Sign Language (ISL) interpreter.
 
 - **Sign → speech:** hands are tracked in the browser (MediaPipe, in a Web
   Worker), an LSTM on the backend recognizes isolated signs, sentences build
-  word by word and are read aloud (Web Speech API).
+  word by word and are read aloud (Web Speech API). Voice output is a
+  first-class toggle — Deaf, mute, or hearing users each choose voice or
+  text-only.
 - **Speech → sign:** spoken English is transcribed, glossed into ISL tokens,
   and played back as a sequence of sign video clips.
 

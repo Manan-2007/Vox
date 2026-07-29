@@ -1,0 +1,5 @@
+{
+  "name": "Orb AI Assistant",
+  "description": "An interactive, emotionally responsive AI assistant with a glowing orb interface and real-time voice interaction.",
+  "requestFramePermissions": ["microphone"]
+}
