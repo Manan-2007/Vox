@@ -1,1 +1,598 @@
-body { margin: 0; background: #fff; color: #111; }
+/* Vox — dark theme, three-column session layout.
+ *
+ * Layout rule that keeps everything on screen: the page is a fixed-height
+ * column, the workspace is a grid row that takes the remaining space, and every
+ * nested flex/grid child carries `min-height: 0`. Without that, a child's
+ * default `min-height: auto` refuses to shrink below its content and pushes the
+ * panels off the bottom instead of scrolling inside them.
+ */
+
+:root {
+  --bg: #0a0e14;
+  --panel: #121821;
+  --panel-raised: #18202b;
+  --border: #232f3e;
+  --border-soft: #1b2532;
+
+  --text: #e6edf3;
+  --text-dim: #9aa7b4;
+  --text-faint: #6b7885;
+
+  --accent: #38bdf8;
+  --accent-warm: #fbbf24;
+  --good: #34d399;
+  --error: #f87171;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --gap: 14px;
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+/* ---------------------------------------------------------------- shell -- */
+
+.session {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap);
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--panel);
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.topbar__mark {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  align-self: center;
+  flex: none;
+}
+
+.topbar__title {
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.topbar__sub {
+  font-size: 13px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topbar__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* ------------------------------------------------------------ workspace -- */
+
+.workspace {
+  flex: 1 1 auto;
+  min-height: 0; /* lets the grid shrink so panels scroll internally */
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 0.7fr);
+  gap: var(--gap);
+  padding: var(--gap);
+}
+
+.panel {
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.panel__head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.panel__title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.panel__count {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px;
+}
+
+.panel__body--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.panel__foot {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--panel-raised);
+}
+
+/* --------------------------------------------------------------- camera -- */
+
+.panel--camera .panel__body {
+  display: flex;
+}
+
+.stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  background: #05080c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Mirrored for display only — the detector still sees the raw frame. */
+.stage__video,
+.stage__overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scaleX(-1);
+}
+
+.stage__cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+  background: rgba(5, 8, 12, 0.86);
+}
+
+.stage__cover-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.stage__cover-body {
+  font-size: 13px;
+  color: var(--text-dim);
+  max-width: 34ch;
+}
+
+.stage__hands {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(10, 14, 20, 0.75);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.readout {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: var(--gap);
+  align-items: center;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border-soft);
+  background: var(--panel-raised);
+}
+
+.readout__label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-faint);
+}
+
+.readout__value {
+  display: block;
+  font-size: clamp(24px, 2.4vw, 34px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.readout__meter-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.readout__pct {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Not uppercased — this is a sign name, not a label. */
+.readout__top {
+  margin-right: 8px;
+  color: var(--text-faint);
+}
+
+.bar {
+  position: relative;
+  height: 7px;
+  border-radius: 999px;
+  background: #0c1219;
+  overflow: hidden;
+}
+
+.bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--good));
+  transition: width 120ms linear;
+}
+
+/* The backend only accepts a word above this confidence. */
+.bar__threshold {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--accent-warm);
+  opacity: 0.85;
+}
+
+/* ----------------------------------------------------------- transcript -- */
+
+.transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Bottom-anchor the log so the newest turn sits at the bottom even when the
+   conversation is short. An auto-margin spacer is used rather than
+   `justify-content: flex-end`, which can make overflowing content at the top
+   unreachable once the log gets long. */
+.transcript::before {
+  content: "";
+  margin-top: auto;
+}
+
+.transcript__empty {
+  margin: auto;
+  max-width: 30ch;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-faint);
+}
+
+.bubble {
+  max-width: 88%;
+  padding: 9px 13px;
+  border-radius: 14px;
+  background: var(--panel-raised);
+  border: 1px solid var(--border-soft);
+}
+
+.bubble--signer {
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.bubble--other {
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  background: #16202c;
+}
+
+.bubble--active {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 9%, var(--panel-raised));
+}
+
+.bubble__text {
+  font-size: 16px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.bubble__word + .bubble__word::before {
+  content: " ";
+}
+
+.bubble__caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 5px;
+  vertical-align: -2px;
+  background: var(--accent);
+  animation: blink 1.1s step-end infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble__caret {
+    animation: none;
+  }
+  .bar__fill {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------ ISL video (P10) -- */
+
+.placeholder {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 18px;
+  text-align: center;
+}
+
+.placeholder__frame {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  margin-bottom: 4px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+  color: var(--text-faint);
+}
+
+.placeholder__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.placeholder__body {
+  font-size: 13px;
+  color: var(--text-faint);
+  max-width: 26ch;
+}
+
+.placeholder__cue {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* -------------------------------------------------------------- pieces -- */
+
+.badge {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--panel-raised);
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46ch;
+}
+
+.badge--live {
+  border-color: color-mix(in srgb, var(--good) 45%, var(--border));
+  color: var(--good);
+}
+
+.badge--pending {
+  border-style: dashed;
+  color: var(--text-faint);
+}
+
+.badge--error {
+  border-color: color-mix(in srgb, var(--error) 45%, var(--border));
+  color: var(--error);
+}
+
+.button {
+  flex: 0 1 auto;
+  padding: 7px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.button:hover:not(:disabled) {
+  background: #1d2733;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.button--primary {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+  color: #d8f1ff;
+  font-weight: 600;
+}
+
+.button--primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 26%, var(--panel));
+}
+
+.button--quiet {
+  margin-left: auto;
+  color: var(--text-faint);
+}
+
+.notfound {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.notfound__title {
+  font-size: 22px;
+  font-weight: 650;
+}
+
+.notfound__body {
+  color: var(--text-dim);
+}
+
+/* ---------------------------------------------------------- responsive -- */
+
+/* Small laptops: tighten the side columns, keep all three visible. */
+@media (max-width: 1440px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) minmax(0, 0.62fr);
+  }
+}
+
+@media (max-width: 1180px) {
+  :root {
+    --gap: 11px;
+  }
+  .workspace {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 0.5fr);
+  }
+  .readout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+  }
+}
+
+/* Below a laptop the three columns stop being honest; stack and let the page
+   scroll rather than crushing every panel. */
+@media (max-width: 1000px) {
+  .session {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .panel--camera,
+  .panel--transcript {
+    min-height: 60vh;
+  }
+  .panel--video {
+    grid-column: 1 / -1;
+    min-height: 200px;
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .panel--video {
+    grid-column: auto;
+  }
+  .topbar__sub {
+    display: none;
+  }
+}

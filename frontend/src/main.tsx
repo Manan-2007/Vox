@@ -1,10 +1,19 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.tsx'
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { SessionPage } from "./pages/SessionPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
+import "./index.css";
 
-createRoot(document.getElementById('root')!).render(
+// One real route today. The router is here so the speech and settings views
+// have somewhere to land without reshaping the app.
+const router = createBrowserRouter([
+  { path: "/", element: <SessionPage /> },
+  { path: "*", element: <NotFoundPage /> },
+]);
+
+createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App />
+    <RouterProvider router={router} />
   </StrictMode>,
-)
+);
