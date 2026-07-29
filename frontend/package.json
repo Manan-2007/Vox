@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predev": "node scripts/copy-assets.mjs",
+    "prebuild": "node scripts/copy-assets.mjs"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "^1.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
