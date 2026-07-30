@@ -21,17 +21,16 @@ because a model is running.
 
 ---
 
-## v1 scope — locked decisions
+## Scope — where the lines actually are
 
-These are deliberately narrow. Breadth is added *after* the core works.
-
-| Decision | v1 choice | Why |
+| Decision | Current choice | Why |
 |---|---|---|
-| Vocabulary | **10–15 fixed signs**, visually distinct | A rock-solid 12-sign demo beats a shaky 50-sign one |
-| Recognition mode | **Isolated words** (one held sign at a time) | Continuous sentence segmentation is a research problem; skip it |
-| Landmarks | **Hands only** → 126 floats (2 hands × 21 pts × x,y,z) | Add face/pose only if accuracy demands it |
-| Data | **30–50 samples/sign, 2–3 different people**, varied lighting | Data variety beats model cleverness; single-person data won't generalize to a judge |
-| Sentence building | Assemble from confirmed words, gated by confidence + stability | Simple, robust, no segmentation needed |
+| Vocabulary (production) | **239 signs** from the ISLRTC dictionary | The avatar only needs one recording per word, so breadth is cheap here |
+| Vocabulary (recognition) | The same 239, but only **37 verified at 80%+** | Recognition needs many recordings per word; the dictionary supplies one |
+| Recognition mode | **Isolated words** (one sign at a time) | Continuous segmentation is a research problem, not a setting |
+| Landmarks | **141 floats**: 2 hands × 21 × xyz, plus 5 pose points | The pose block is the body anchor; without it only finger shape survives |
+| Avatar geometry | MediaPipe **world landmarks** (metric, 3D) | Image-space z is a weak guess and produces a flat hand |
+| Sentence building | Confirmed words → ISL grammar → English | Word order carries meaning; a word list is not a sentence |
 
 ---
 
@@ -39,9 +38,10 @@ These are deliberately narrow. Breadth is added *after* the core works.
 
 ```mermaid
 flowchart TD
-    A[Webcam] --> B[MediaPipe HandLandmarker<br/>in browser]
-    B --> C[126 floats per frame<br/>2 hands x 21 x xyz]
-    C -->|WebSocket, ~15 FPS| D[FastAPI]
+    A[Webcam] --> B[MediaPipe Hand + Pose<br/>in a Web Worker, 30 FPS]
+    B --> B2[stabilise: One Euro filter,<br/>handedness continuity]
+    B2 --> C[141 floats per frame]
+    C -->|WebSocket, 15 FPS| D[FastAPI]
     D --> E[normalize frame]
     E --> F[deque maxlen=30]
     F --> G{queue full?}
@@ -54,11 +54,18 @@ flowchart TD
 ```
 
 **Normalization is the one thing that must be identical** on the collection side
-and the inference side. Keep it in a single shared function
-(`ml/normalize.py`) that both `train`/`preprocess` and the backend import. Per
-hand: translate so the wrist (landmark 0) is the origin, then scale by a stable
-reference distance (wrist → middle-finger MCP, landmark 9). Missing hand → 63
-zeros.
+and the inference side. It lives in a single shared function (`ml/normalize.py`)
+that `preprocess.py` and the backend both import. Anchoring is on the BODY —
+origin at the shoulder midpoint, unit = shoulder width — not on the hand. An
+earlier version pinned each wrist to (0,0), which erased both where a sign
+happened and how it moved, leaving only finger shape; the model collapsed onto
+one class. Missing hand → 63 zeros.
+
+**Coordinates are defined at 16:9.** MediaPipe divides x by frame width and y by
+frame height, so normalized coordinates are only comparable across axes at one
+aspect ratio. Cameras of other shapes are rescaled onto 16:9 rather than being
+handed to a model that has never seen those proportions
+(`aspect_scale` in `ml/collect.py`, `aspectScale` in `frontend/src/tracking.ts`).
 
 **Hand ordering must also be identical** everywhere: order the two hands
 deterministically by MediaPipe handedness (e.g. Left block then Right block),
@@ -110,9 +117,13 @@ flowchart LR
 
 ## Tech stack
 
-- **Frontend:** React + Vite + TypeScript, `@mediapipe/tasks-vision`
+- **Frontend:** React + Vite + TypeScript, `@mediapipe/tasks-vision`, three.js
 - **Backend:** FastAPI + Uvicorn (async WebSockets)
-- **ML:** Python, MediaPipe (data collection), TensorFlow / Keras (LSTM)
+- **ML:** Python, MediaPipe, TensorFlow / Keras (BiLSTM + attention pooling)
+
+Custom Keras layers live in `ml/layers.py` because the backend has to be able to
+reconstruct them when loading the saved model — defining them in `train.py` would
+make the model unloadable by the process that serves it.
 
 ## Target folder structure
 
