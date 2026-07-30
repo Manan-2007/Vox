@@ -13,10 +13,17 @@ frontend/public/mediapipe/
 frontend/public/models/
 
 # ML artifacts. Raw data and the MediaPipe bundle are regenerated
-# (ml/fetch_videos.py + ml/extract.py; collect.py downloads the bundle), but
+# (ml/fetch_dictionary.py + ml/extract.py; collect.py downloads the bundle), but
 # the small trained model SHIPS so the product works out of the box.
 ml/data/
 ml/models/hand_landmarker.task
+ml/models/pose_landmarker_lite.task
+
+# Source dictionary clips: ~90 MB of video, re-downloadable in about 25 minutes
+# with `python ml/fetch_dictionary.py --download`. What ships instead is the
+# landmark motion extracted from them (frontend/public/signs/), which is a
+# twentieth of the size and, unlike the clips, carries nobody's likeness.
+ml/videos/
 
 # OS / editor
 .DS_Store

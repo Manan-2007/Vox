@@ -93,11 +93,18 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Preprocess ISL landmark samples.")
     parser.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     parser.add_argument("--val-split", type=float, default=0.2, help="default 0.2")
+    parser.add_argument(
+        "--test-split", type=float, default=0.2,
+        help="share of source videos held back and never trained or tuned on "
+             "(default 0.2; 0 disables)",
+    )
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
     if not 0.0 < args.val_split < 1.0:
         sys.exit("--val-split must be between 0 and 1 (exclusive).")
+    if not 0.0 <= args.test_split < 1.0:
+        sys.exit("--test-split must be at least 0 and below 1.")
 
     labels = discover_labels(args.data_dir)
     out_dir = args.data_dir / PROCESSED_DIRNAME
@@ -156,9 +163,21 @@ def main() -> None:
     # answer the question that matters: does this transfer to a signer the
     # model has never seen?
     # ------------------------------------------------------------------
+    # ------------------------------------------------------------------
+    # Three splits, not two.
+    #
+    # Validation picks the checkpoint and decides when to stop, which makes its
+    # accuracy an optimistic estimate of itself. The test split is held back from
+    # both, so it is the only number that answers "does this work on a recording
+    # nobody tuned against". A class with too few source videos to spare one for
+    # each split gives up its test share first and its validation share second —
+    # training data is the scarcer resource.
+    # ------------------------------------------------------------------
     rng = np.random.default_rng(args.seed)
     val_mask = np.zeros(len(y), bool)
+    test_mask = np.zeros(len(y), bool)
     single_video = []
+    untested = []
 
     for index, label in enumerate(labels):
         rows = np.flatnonzero(y == index)
@@ -166,20 +185,45 @@ def main() -> None:
         if len(label_videos) < 2:
             single_video.append(label)
             continue
-        n_val = max(1, int(round(len(label_videos) * args.val_split)))
-        n_val = min(n_val, len(label_videos) - 1)  # always keep one for training
-        chosen = rng.choice(label_videos, size=n_val, replace=False)
-        val_mask |= np.isin(groups, chosen)
+
+        shuffled = list(rng.permutation(label_videos))
+        # At least one video always stays in training.
+        spare = len(shuffled) - 1
+
+        n_test = min(spare, max(1, int(round(len(shuffled) * args.test_split))))
+        if args.test_split == 0:
+            n_test = 0
+        test_videos = shuffled[:n_test]
+        spare -= n_test
+
+        n_val = min(spare, max(1, int(round(len(shuffled) * args.val_split))))
+        val_videos = shuffled[n_test : n_test + n_val]
+
+        if test_videos:
+            test_mask |= np.isin(groups, test_videos)
+        else:
+            untested.append(label)
+        if val_videos:
+            val_mask |= np.isin(groups, val_videos)
 
     if single_video:
         print(
-            "\nWarning: only one source video for: " + ", ".join(single_video) +
-            "\n  Those samples all go to training — validation cannot measure them."
-            "\n  Add another video (or your own recordings) for a real score."
+            f"\nOnly one source recording for {len(single_video)} label(s): "
+            + ", ".join(single_video[:20])
+            + (" …" if len(single_video) > 20 else "")
+            + "\n  All their samples go to training. Nothing can be held out, so no"
+            "\n  measurement covers these words — they are trainable but unverified."
+            "\n  Record your own with: python ml/collect.py <word>"
+        )
+    if untested:
+        print(
+            f"\n{len(untested)} label(s) have too few recordings to spare one for the"
+            " test split;\n  they are validated but not tested."
         )
 
-    X_train, y_train = X[~val_mask], y[~val_mask]
+    X_train, y_train = X[~val_mask & ~test_mask], y[~val_mask & ~test_mask]
     X_val, y_val = X[val_mask], y[val_mask]
+    X_test, y_test = X[test_mask], y[test_mask]
 
     if len(X_val) == 0:
         sys.exit("\nNo validation samples — every class has a single source video.")
@@ -189,6 +233,8 @@ def main() -> None:
     np.save(out_dir / "y_train.npy", y_train)
     np.save(out_dir / "X_val.npy", X_val)
     np.save(out_dir / "y_val.npy", y_val)
+    np.save(out_dir / "X_test.npy", X_test)
+    np.save(out_dir / "y_test.npy", y_test)
     label_map = {
         "labels": labels,
         "label_to_index": {label: i for i, label in enumerate(labels)},
@@ -197,29 +243,50 @@ def main() -> None:
 
     train_counts = Counter(y_train.tolist())
     val_counts = Counter(y_val.tolist())
+    test_counts = Counter(y_test.tolist())
 
-    held_out = sorted(set(groups[val_mask]))
-    print(f"\nHeld-out videos (validation): {', '.join(held_out)}")
     print(f"\nWrote to {out_dir}")
     print(f"  X_train {X_train.shape}  y_train {y_train.shape}")
     print(f"  X_val   {X_val.shape}  y_val   {y_val.shape}")
+    print(f"  X_test  {X_test.shape}  y_test  {y_test.shape}")
     print(f"  label_map.json ({len(labels)} labels)")
 
+    # With a 200-word vocabulary a full per-class table is unreadable; print the
+    # distribution and only the classes that are actually short of data.
     print("\nPer-class sample counts")
-    print(f"  {'idx':<5}{'label':<20}{'total':>7}{'train':>7}{'val':>7}")
-    for index, label in enumerate(labels):
-        print(
-            f"  {index:<5}{label:<20}{counts[index]:>7}"
-            f"{train_counts[index]:>7}{val_counts[index]:>7}"
-        )
-    print(f"  {'':<5}{'TOTAL':<20}{len(y):>7}{len(y_train):>7}{len(y_val):>7}")
+    thin = [labels[i] for i in range(len(labels)) if counts[i] < 8]
+    print(f"  total {len(y)}  train {len(y_train)}  val {len(y_val)}  test {len(y_test)}")
+    print(f"  median samples per class: {int(np.median([counts[i] for i in range(len(labels))]))}")
+    print(f"  fewest: {min(counts[i] for i in range(len(labels)))}, "
+          f"most: {max(counts[i] for i in range(len(labels)))}")
+    if thin:
+        print(f"  {len(thin)} class(es) under 8 samples: "
+              + ", ".join(thin[:20]) + (" …" if len(thin) > 20 else ""))
 
-    missing = [labels[i] for i in range(len(labels)) if val_counts[i] == 0]
-    if missing:
-        print(
-            f"\nWarning: no validation samples for: {', '.join(missing)}. "
-            "Validation accuracy will not reflect these classes."
-        )
+    no_val = [labels[i] for i in range(len(labels)) if val_counts[i] == 0]
+    no_test = [labels[i] for i in range(len(labels)) if test_counts[i] == 0]
+    print(
+        f"\nCoverage: {len(labels) - len(no_val)}/{len(labels)} labels have validation"
+        f" samples, {len(labels) - len(no_test)}/{len(labels)} have test samples."
+    )
+    print(
+        "  Accuracy is only meaningful for labels with test samples. The rest are\n"
+        "  trained and served but unmeasured — the UI marks them as such."
+    )
+
+    # Written next to the splits so the app can tell verified words from
+    # unverified ones without re-deriving it from the data directory.
+    coverage = {
+        label: {
+            "samples": counts[i],
+            "train": train_counts[i],
+            "val": val_counts[i],
+            "test": test_counts[i],
+            "verified": test_counts[i] > 0,
+        }
+        for i, label in enumerate(labels)
+    }
+    (out_dir / "coverage.json").write_text(json.dumps(coverage, indent=1) + "\n")
 
 
 if __name__ == "__main__":

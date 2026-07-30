@@ -1,44 +1,44 @@
 /**
- * The session view: camera left, conversation centre, speech -> ISL right.
+ * The session: a stage on the left, the conversation on the right.
  *
- * This is the only place the data sources join:
- *   hand tracking -> socket -> confirmed words -> current sentence
- *   sentence completion (pause timeout or button) -> commit + optional TTS
- *   speech recognition -> transcript ("heard") + ISL clip queue
- *
- * Voice output is a first-class toggle in the top bar (persisted): Deaf, mute,
- * or hearing users each pick whether sentences are voiced or stay text-only.
+ * The stage switches focus by itself. While the hearing side is being signed
+ * back, it plays the reference motion; the moment that finishes, or the signer
+ * starts moving, it returns to mirroring the camera. Nobody has to press a mode
+ * button in the middle of a conversation, which is the one thing guaranteed not
+ * to happen when two people are actually trying to talk.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { CameraPanel } from "../components/CameraPanel";
+import { Composer } from "../components/Composer";
+import { Conversation } from "../components/Conversation";
+import { Recognition } from "../components/Recognition";
 import { SettingsDrawer } from "../components/SettingsDrawer";
-import { SignVideoPanel } from "../components/SignVideoPanel";
-import { TranscriptPanel } from "../components/TranscriptPanel";
+import { SignStage, type StageMode } from "../components/SignStage";
 import { turnText, useConversation } from "../hooks/useConversation";
 import { useHandTracking } from "../hooks/useHandTracking";
 import { useSpeech } from "../hooks/useSpeech";
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition";
 import { useVoxSocket, type ConfirmedWord } from "../hooks/useVoxSocket";
-import { useIslQueue } from "../isl/useIslQueue";
+import { toEnglish } from "../isl/grammar";
+import { useRecognitionQuality } from "../isl/useRecognitionQuality";
+import { useSignQueue } from "../isl/useSignQueue";
 
-/** A sentence is considered finished after this long without a new word. */
+/** A signed sentence is considered finished after this long without a new word. */
 const SENTENCE_PAUSE_MS = 3500;
+/** How long the stage stays on the reference after its last sign ends. */
+const REFERENCE_HOLD_MS = 2500;
 const DEFAULT_THRESHOLD = 0.85;
 const VOICE_KEY = "vox-voice-output";
 
 export function SessionPage() {
   const conversation = useConversation();
   const speech = useSpeech();
-  const isl = useIslQueue();
+  const signs = useSignQueue();
+  const recognitionQuality = useRecognitionQuality();
 
-  const [latestWord, setLatestWord] = useState<{
-    text: string;
-    confidence: number;
-    at: number;
-  } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [threshold, setThresholdState] = useState(DEFAULT_THRESHOLD);
+  const [stageMode, setStageMode] = useState<StageMode>("live");
   const [voiceOn, setVoiceOnState] = useState<boolean>(() => {
     try {
       const stored = localStorage.getItem(VOICE_KEY);
@@ -53,26 +53,29 @@ export function SessionPage() {
     try {
       localStorage.setItem(VOICE_KEY, String(value));
     } catch {
-      /* private mode etc. — the toggle still works for the session */
+      /* private mode — the toggle still works for this session */
     }
   }, []);
 
-  // Refs so timers see current state without re-arming on every render.
+  // Refs so timers read current state without re-arming on every render.
   const currentRef = useRef(conversation.current);
   currentRef.current = conversation.current;
   const voiceRef = useRef(voiceOn);
   voiceRef.current = voiceOn;
   const pauseTimer = useRef<number | undefined>(undefined);
+  const stageTimer = useRef<number | undefined>(undefined);
 
   /* ------------------------------------------------- sentence completion -- */
   const finishSentence = useCallback(() => {
     window.clearTimeout(pauseTimer.current);
     const turn = currentRef.current;
     if (turn.words.length === 0) return;
-    const text = turnText(turn);
+    // Speak the reconstructed English, not the raw gloss: "What is your name?"
+    // is what the hearing person needs to hear, not "you name what".
+    const sentence = toEnglish(turn.words.map((word) => word.text)) || turnText(turn);
     const willSpeak = speech.supported && voiceRef.current;
     conversation.newTurn({ spoken: willSpeak });
-    if (willSpeak) speech.speak(text);
+    if (willSpeak) speech.speak(sentence);
   }, [conversation, speech]);
 
   const finishRef = useRef(finishSentence);
@@ -80,8 +83,10 @@ export function SessionPage() {
 
   const handleWord = useCallback(
     (word: ConfirmedWord) => {
-      setLatestWord({ text: word.word, confidence: word.confidence, at: Date.now() });
       conversation.appendWord(word);
+      // The signer has taken the floor: stop showing the reference.
+      setStageMode("live");
+      window.clearTimeout(stageTimer.current);
       window.clearTimeout(pauseTimer.current);
       pauseTimer.current = window.setTimeout(
         () => finishRef.current(),
@@ -91,10 +96,16 @@ export function SessionPage() {
     [conversation],
   );
 
-  useEffect(() => () => window.clearTimeout(pauseTimer.current), []);
+  useEffect(
+    () => () => {
+      window.clearTimeout(pauseTimer.current);
+      window.clearTimeout(stageTimer.current);
+    },
+    [],
+  );
 
   /* ------------------------------------------------------- socket + cam -- */
-  const { socket, live, buffered, error, noModel, top3, quality, send, setThreshold } =
+  const { socket, error, noModel, top3, quality, send, setThreshold } =
     useVoxSocket(handleWord);
   const tracking = useHandTracking(send);
 
@@ -106,57 +117,68 @@ export function SessionPage() {
     [setThreshold],
   );
 
-  /* --------------------------------------------- speech -> ISL pipeline -- */
-  const handleHeard = useCallback(
+  /* ------------------------------------------------- speech -> sign path -- */
+  const say = useCallback(
     (text: string) => {
       conversation.addUtterance(text, "other");
-      isl.enqueuePhrase(text);
+      setStageMode("reference");
+      window.clearTimeout(stageTimer.current);
+      void signs.speak(text);
     },
-    [conversation, isl],
+    [conversation, signs],
   );
-  const recognition = useSpeechRecognition(handleHeard);
+
+  const recognition = useSpeechRecognition(say);
+
+  // Once the queue has played through, hand the stage back to the camera.
+  const handleQueueDone = useCallback(() => {
+    window.clearTimeout(stageTimer.current);
+    stageTimer.current = window.setTimeout(
+      () => setStageMode("live"),
+      REFERENCE_HOLD_MS,
+    );
+  }, []);
+
+  const ready = socket === "open" && !noModel;
+
+  const status = useMemo(() => {
+    if (error) return { tone: "error" as const, text: error };
+    if (socket !== "open") return { tone: "error" as const, text: `Backend ${socket}` };
+    if (noModel) return { tone: "warn" as const, text: "No recognition model" };
+    return { tone: "live" as const, text: "Ready" };
+  }, [error, socket, noModel]);
 
   return (
-    <div className="session">
+    <div className="app">
       <header className="topbar">
-        <div className="topbar__brand">
-          <Link to="/" className="topbar__home" aria-label="Vox home">
-            <span className="topbar__mark" aria-hidden />
-            <h1 className="topbar__title">Vox</h1>
-          </Link>
-          <span className="topbar__sub">Indian Sign Language interpreter</span>
-        </div>
+        <Link to="/" className="brand" aria-label="Vox home">
+          <span className="brand__mark" aria-hidden />
+          <span className="brand__name">Vox</span>
+          <span className="brand__sub">Indian Sign Language interpreter</span>
+        </Link>
 
-        <div className="topbar__status">
-          {error && <span className="badge badge--error">{error}</span>}
-          {noModel && (
-            <span
-              className="badge badge--error"
-              title="The backend is running but ml/models/vox_lstm.keras is missing. Run: python ml/extract.py --videos-dir <videos> && python ml/preprocess.py && python ml/train.py"
-            >
-              recognition off — no model
-            </span>
-          )}
-          <button
-            type="button"
-            className={`button voice-toggle ${voiceOn && speech.supported ? "voice-toggle--on" : ""}`}
-            onClick={() => setVoiceOn(!voiceOn)}
-            disabled={!speech.supported}
-            title={
-              speech.supported
-                ? "Choose whether finished sentences are read aloud or stay as text"
-                : "Speech output is not available in this browser"
-            }
-            aria-pressed={voiceOn}
-          >
-            {speech.supported ? (voiceOn ? "🔊 Voice on" : "🔇 Text only") : "🔇 No voice"}
-          </button>
-          <span className={`badge badge--${socket === "open" ? "live" : "error"}`}>
-            {socket === "open" ? "Backend connected" : `Backend ${socket}…`}
+        <div className="topbar__tools">
+          <span className={`chip chip--${status.tone}`}>
+            <span className="chip__dot" />
+            {status.text}
           </span>
           <button
             type="button"
-            className="button"
+            className={`btn ${voiceOn && speech.supported ? "btn--primary" : ""}`}
+            onClick={() => setVoiceOn(!voiceOn)}
+            disabled={!speech.supported}
+            aria-pressed={voiceOn}
+            title={
+              speech.supported
+                ? "Read finished signed sentences aloud"
+                : "This browser has no speech output"
+            }
+          >
+            {speech.supported ? (voiceOn ? "Voice on" : "Text only") : "No voice"}
+          </button>
+          <button
+            type="button"
+            className="btn"
             onClick={() => setSettingsOpen(true)}
           >
             Settings
@@ -165,29 +187,55 @@ export function SessionPage() {
       </header>
 
       <main className="workspace">
-        <CameraPanel
+        <SignStage
+          mode={stageMode}
+          queue={signs.queue}
           tracking={tracking}
-          live={live}
-          buffered={buffered}
-          latestWord={latestWord}
-          threshold={threshold}
-          top3={top3}
-          quality={quality}
+          ready={ready}
+          loadingSigns={signs.loading}
+          onQueueDone={handleQueueDone}
         />
-        <TranscriptPanel
-          conversation={conversation}
-          onSpeakNow={finishSentence}
-          speaking={speech.speaking}
-          voiceOn={voiceOn && speech.supported}
-        />
-        <SignVideoPanel
-          isl={isl}
-          recognition={recognition}
-          onPhrase={handleHeard}
-          ttsSpeaking={speech.speaking}
-          lastWordAt={latestWord?.at ?? null}
-          replayFrame={isl.replayFrame}
-        />
+
+        <section className="card card--talk card--signer">
+          <header className="card__head">
+            <h2 className="card__title">Conversation</h2>
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={conversation.clear}
+              disabled={conversation.turns.length === 0}
+            >
+              Clear
+            </button>
+          </header>
+
+          <div className="card__body">
+            <Conversation
+              conversation={conversation}
+              quality={recognitionQuality}
+              onFinishTurn={finishSentence}
+              speaking={speech.speaking}
+              voiceOn={voiceOn && speech.supported}
+            />
+            <Recognition
+              top3={top3}
+              threshold={threshold}
+              quality={quality}
+              active={ready && tracking.cameraOn}
+            />
+            <Composer
+              onSay={say}
+              listening={recognition.listening}
+              onToggleListening={
+                recognition.listening ? recognition.stop : recognition.start
+              }
+              speechSupported={recognition.supported}
+              interim={recognition.interim}
+              lastGloss={signs.lastGloss}
+              busy={signs.loading}
+            />
+          </div>
+        </section>
       </main>
 
       <SettingsDrawer
@@ -195,11 +243,12 @@ export function SessionPage() {
         onClose={() => setSettingsOpen(false)}
         threshold={threshold}
         onThreshold={handleThreshold}
-        autoSpeak={voiceOn}
-        onAutoSpeak={setVoiceOn}
+        voiceOn={voiceOn}
+        onVoiceOn={setVoiceOn}
         ttsSupported={speech.supported}
         tracking={tracking}
-        onClearConversation={conversation.clear}
+        signCount={signs.signs ? Object.keys(signs.signs).length : 0}
+        recognition={recognitionQuality}
       />
     </div>
   );

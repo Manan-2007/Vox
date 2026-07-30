@@ -1,0 +1,1262 @@
+{
+ "classes": 242,
+ "test_samples": 233,
+ "classes_measured": 124,
+ "top1": 0.382,
+ "top3": 0.4506,
+ "top5": 0.4721,
+ "gate": 0.85,
+ "gated_precision": 0.7717,
+ "gated_coverage": 0.3948,
+ "reliable": [
+  "alright",
+  "big",
+  "careful",
+  "drive",
+  "expensive",
+  "forget",
+  "good",
+  "goodmorning",
+  "have",
+  "he",
+  "hello",
+  "howareyou",
+  "india",
+  "key",
+  "kitchen",
+  "man",
+  "meet",
+  "new",
+  "open",
+  "play",
+  "pleased",
+  "police",
+  "rest",
+  "road",
+  "school",
+  "signlanguage",
+  "sit",
+  "son",
+  "take",
+  "teach",
+  "teacher",
+  "thankyou",
+  "vegetable",
+  "village",
+  "work",
+  "yes",
+  "you"
+ ],
+ "per_class": {
+  "accident": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "afraid": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "afternoon": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "again": {
+   "support": 3,
+   "top1": 0.0,
+   "verified": true
+  },
+  "all": {
+   "support": 5,
+   "top1": 0.0,
+   "verified": true
+  },
+  "alright": {
+   "support": 6,
+   "top1": 0.833,
+   "verified": true
+  },
+  "always": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "ambulance": {
+   "support": 2,
+   "top1": 0.0,
+   "verified": true
+  },
+  "angry": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "answer": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "ask": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "baby": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "bad": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "bag": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "bank": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "beautiful": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "big": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "blood": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "book": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "boy": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "bread": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "brother": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "bus": {
+   "support": 8,
+   "top1": 0.0,
+   "verified": true
+  },
+  "busy": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "call": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "can": {
+   "support": 8,
+   "top1": 0.0,
+   "verified": true
+  },
+  "car": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "careful": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "cheap": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "child": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "city": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "clean": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "close": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "clothes": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "cold": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "college": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "come": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "cook": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "cough": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "danger": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "day": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "deaf": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "different": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "difficult": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "doctor": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "dontknow": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "drink": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "drive": {
+   "support": 8,
+   "top1": 1.0,
+   "verified": true
+  },
+  "early": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "easy": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "eat": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "egg": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "eight": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "emergency": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "empty": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "evening": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "expensive": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "family": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "fast": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "father": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "fever": {
+   "support": 8,
+   "top1": 0.0,
+   "verified": true
+  },
+  "fifty": {
+   "support": 8,
+   "top1": 0.0,
+   "verified": true
+  },
+  "find": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "finish": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "fire": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "five": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "food": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "forget": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "four": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "free": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "friend": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "fruit": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "full": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "girl": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "give": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "go": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "good": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "goodafternoon": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "goodbye": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "goodevening": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "goodmorning": {
+   "support": 8,
+   "top1": 1.0,
+   "verified": true
+  },
+  "goodnight": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "happy": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "have": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "he": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "headache": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "hearingaid": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "hello": {
+   "support": 7,
+   "top1": 1.0,
+   "verified": true
+  },
+  "help": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "here": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "home": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "hospital": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "hot": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "hour": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "how": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "howareyou": {
+   "support": 20,
+   "top1": 0.95,
+   "verified": true
+  },
+  "howmany": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "howmuch": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "hundred": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "hungry": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "husband": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "i": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "important": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "india": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "injection": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "interpreter": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "key": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "kitchen": {
+   "support": 4,
+   "top1": 1.0,
+   "verified": true
+  },
+  "know": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "late": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "learn": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "less": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "like": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "listen": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "live": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "lose": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "love": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "man": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "many": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "market": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "maybe": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "medicine": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "meet": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "milk": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "money": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "month": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "more": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "morning": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "mother": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "name": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "never": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "new": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "night": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "nine": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "no": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "now": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "nurse": {
+   "support": 5,
+   "top1": 0.0,
+   "verified": true
+  },
+  "office": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "ok": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "old": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "one": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "open": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "operation": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "pain": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "pay": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "people": {
+   "support": 8,
+   "top1": 0.0,
+   "verified": true
+  },
+  "phone": {
+   "support": 2,
+   "top1": 0.0,
+   "verified": true
+  },
+  "play": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "please": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "pleased": {
+   "support": 4,
+   "top1": 1.0,
+   "verified": true
+  },
+  "police": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "price": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "read": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "ready": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "remember": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "rest": {
+   "support": 2,
+   "top1": 1.0,
+   "verified": true
+  },
+  "restaurant": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "rice": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "road": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "room": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "sad": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "salt": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "same": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "school": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "see": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "sell": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "send": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "seven": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "she": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "shop": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "show": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "sick": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "signlanguage": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "sister": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "sit": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "six": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "sleep": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "slow": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "small": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "some": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "sometimes": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "son": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "sorry": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "speak": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "stand": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "start": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "station": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "stomach": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "stop": {
+   "support": 8,
+   "top1": 0.0,
+   "verified": true
+  },
+  "student": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "study": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "sugar": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "tablet": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "take": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "tea": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "teach": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "teacher": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "ten": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "thankyou": {
+   "support": 5,
+   "top1": 0.8,
+   "verified": true
+  },
+  "that": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "there": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "they": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "think": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "thirsty": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "thirty": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "this": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "thousand": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "three": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "ticket": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "time": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "tired": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "today": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "toilet": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "train": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "twenty": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "two": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "understand": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "vegetable": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "village": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "wait": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "wakeup": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "walk": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "want": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "wash": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "water": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "we": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "wear": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "week": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "welcome": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "what": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "when": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "where": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "which": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "who": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "why": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "woman": {
+   "support": 1,
+   "top1": 0.0,
+   "verified": true
+  },
+  "work": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "write": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "year": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "yes": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  },
+  "yesterday": {
+   "support": 0,
+   "top1": null,
+   "verified": false
+  },
+  "you": {
+   "support": 1,
+   "top1": 1.0,
+   "verified": true
+  }
+ }
+}

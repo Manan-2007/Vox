@@ -1,218 +1,284 @@
 /**
- * Landing page: what Vox set out to do, what it verifiably does today, how to
- * operate it, and a starter guide of signs and phrases to try.
+ * The landing page.
  *
- * The claims here are kept honest on purpose — "what works today" lists only
- * behaviour that is implemented and tested in this repo.
+ * It leads with the avatar actually signing a sentence, because that is the
+ * product, and because a still image of a sign-language tool tells you nothing.
+ *
+ * The vocabulary count is read from the shipped manifest rather than typed in,
+ * so the page cannot claim a vocabulary the build does not have. The limitations
+ * section is not modesty — a sign-language tool that overclaims gets relied on
+ * in a hospital and fails there.
  */
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Orb } from "../components/Orb";
+import { SignAvatar } from "../components/SignAvatar";
+import {
+  loadManifest,
+  loadSign,
+  type ManifestEntry,
+  type QueueItem,
+} from "../avatar/signMotion";
+import { useRecognitionQuality } from "../isl/useRecognitionQuality";
 
-const AIMS = [
-  "A full two-way interpreter: a Deaf or hard-of-hearing signer and a hearing speaker holding a natural conversation.",
-  "Recognition that generalizes across signers, lighting, and regional ISL variation.",
-  "Continuous signing — whole sentences signed fluidly, not word by word.",
-  "Facial expression and body pose as part of meaning, the way real ISL uses them.",
+/** The hero loop: a real sentence, not a word list. */
+const HERO_PHRASE: [string, string][] = [
+  ["i", "I"],
+  ["you", "you"],
+  ["help", "help"],
+  ["can", "can"],
 ];
 
-const DONE = [
-  "Live holistic tracking in the browser at 15 FPS — hands and upper body, MediaPipe in a Web Worker, rendered as a 3D skeleton.",
-  "Isolated-sign recognition over a 2-second window (LSTM) — 100% on held-out signers it never trained on, gated on confidence and stability.",
-  "Sentences build word by word and are spoken aloud — with voice output fully optional.",
-  "Spoken or typed replies are glossed into ISL tokens and played back as sign clips, with a queue.",
-  "Ships working: trained on the INCLUDE ISL dataset (21 different signers per word) and included in the repo.",
-  "Privacy by construction: video never leaves the machine; only 126 landmark numbers per frame cross a local socket.",
-  "Graceful degradation: backend reconnects automatically; every capability (mic, voice, clips) has a fallback.",
+/** Shown if present in the library — the words the product was built around. */
+const HIGHLIGHTS = [
+  "help", "water", "eat", "doctor", "hospital", "pain", "police", "medicine",
+  "money", "what", "where", "howmuch", "please", "sorry", "yes", "no",
+  "mother", "home", "work", "understand", "tomorrow", "emergency",
 ];
-
-const STEPS = [
-  {
-    title: "Allow the camera",
-    body: "Open a session and grant camera access. The skeleton overlay confirms your hands are being tracked.",
-  },
-  {
-    title: "Sign, and hold",
-    body: "Face the camera and hold each sign steady for about two seconds. The confidence bar shows how sure the model is; a word is accepted only past the marker.",
-  },
-  {
-    title: "Pause to finish",
-    body: "Words collect into a sentence. Pause signing for a few seconds — or press “Speak sentence” — and the sentence is committed, and voiced if voice is on.",
-  },
-  {
-    title: "Reply in speech",
-    body: "The other person taps the mic and speaks, or types a phrase. Vox glosses it into sign tokens and plays the matching ISL clips.",
-  },
-];
-
-/**
- * Starter vocabulary guide. The descriptions match the dictionary clips Vox was trained on —
- * ISL varies regionally, and the model recognizes signs AS RECORDED during
- * data collection, so the recorded form is always the ground truth.
- */
-const SIGNS = [
-  { word: "hello", label: "Hello", glyph: "\u{1F44B}", how: "Open hand raised beside the head, palm forward." },
-  { word: "howareyou", label: "How are you", glyph: "\u{1F932}", how: "Both hands open, turning outward in a questioning gesture." },
-  { word: "thankyou", label: "Thank you", glyph: "\u{1F64F}", how: "Flat hand from the chin, moving forward and down." },
-  { word: "pleased", label: "Pleased", glyph: "\u{1F60A}", how: "Flat hand brushing upward on the chest." },
-  { word: "alright", label: "Alright", glyph: "\u{1F44C}", how: "Thumb and index forming a ring, held up briefly." },
-  { word: "goodmorning", label: "Good morning", glyph: "\u{1F305}", how: "\u201cGood\u201d, then a forearm rising like a sunrise." },
-];
-
-const PHRASES = [
-  "Hello, how are you",
-  "Good morning",
-  "Thank you",
-  "Pleased to meet you",
-];
-
-
 
 export function LandingPage() {
+  const [signs, setSigns] = useState<Record<string, ManifestEntry>>({});
+  const [queue, setQueue] = useState<QueueItem[]>([]);
+  // Numbers come from the measurement file, never from the copy — a page that
+  // claims an accuracy the build cannot reach is exactly the failure this
+  // project is trying not to be.
+  const recognition = useRecognitionQuality();
+
+  useEffect(() => {
+    let disposed = false;
+    void loadManifest().then(async (manifest) => {
+      if (disposed) return;
+      setSigns(manifest.signs ?? {});
+      const items = await Promise.all(
+        HERO_PHRASE.map(async ([gloss, label]) => {
+          const motion = await loadSign(gloss);
+          return { gloss, label, motion, missing: motion === null };
+        }),
+      );
+      if (!disposed) setQueue(items.filter((item) => !item.missing));
+    });
+    return () => {
+      disposed = true;
+    };
+  }, []);
+
+  const available = useMemo(() => Object.keys(signs), [signs]);
+  const sample = useMemo(
+    () =>
+      HIGHLIGHTS.filter((gloss) => gloss in signs).map(
+        (gloss) => signs[gloss].english,
+      ),
+    [signs],
+  );
+
   return (
     <div className="landing">
-      <header className="landing__nav">
-        <div className="topbar__brand">
-          <span className="topbar__mark" aria-hidden />
-          <span className="topbar__title">Vox</span>
-        </div>
-        <Link to="/session" className="button button--primary">
+      <nav className="landing__nav">
+        <span className="brand">
+          <span className="brand__mark" aria-hidden />
+          <span className="brand__name">Vox</span>
+        </span>
+        <Link className="btn btn--primary" to="/session">
           Open the interpreter
         </Link>
+      </nav>
+
+      <header className="hero">
+        <div>
+          <p className="hero__kicker">
+            <span className="chip__dot" style={{ background: "var(--good)" }} />
+            Runs on your machine — no video ever leaves it
+          </p>
+          <h1 className="hero__title">
+            Indian Sign Language,
+            <br />
+            <span className="hero__accent">translated both ways.</span>
+          </h1>
+          <p className="hero__body">
+            Sign to the camera and Vox assembles the sentence and speaks it. Say
+            something back and a 3D signer performs it in ISL — reordered into
+            ISL grammar, not English word-for-word on the hands. Slow it down,
+            loop it, turn it around and see the sign from any angle.
+          </p>
+          <div className="hero__actions">
+            <Link className="btn btn--primary btn--lg" to="/session">
+              Start a conversation
+            </Link>
+            <a
+              className="btn btn--lg"
+              href="https://islrtc.nic.in/"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              About ISLRTC
+            </a>
+          </div>
+        </div>
+
+        <div className="hero__stage">
+          <SignAvatar queue={queue} loop mirror />
+          {queue.length === 0 && (
+            <div className="stage__empty">
+              <p className="stage__empty-title">Loading the signer…</p>
+            </div>
+          )}
+        </div>
       </header>
 
-      <main>
-        <section className="hero">
-          <div className="hero__copy">
-            <p className="hero__kicker">Real-time Indian Sign Language</p>
-            <h1 className="hero__title">
-              A two-way conversation,
-              <br />
-              <span className="hero__accent">signed and spoken.</span>
-            </h1>
-            <p className="hero__body">
-              Vox watches your hands, recognizes ISL signs as you make them, and
-              builds them into sentences the other person can read — or hear.
-              Their spoken reply comes back as sign video. Voice is always a
-              choice, never a requirement.
+      <section className="section">
+        <h2 className="section__title">What it does</h2>
+        <p className="section__lede">
+          Two directions, one conversation. The signs come from the official
+          Indian Sign Language dictionary published by ISLRTC, an autonomous body
+          under the Government of India.
+        </p>
+        <div className="grid">
+          <article className="tile">
+            <p className="tile__metric">{available.length || "—"}</p>
+            <h3 className="tile__title">signs the avatar can perform</h3>
+            <p className="tile__body">
+              Verbs, pronouns, question words, health and emergency vocabulary —
+              chosen so you can ask for a doctor, not only say hello.
             </p>
-            <div className="hero__actions">
-              <Link to="/session" className="button button--primary button--lg">
-                Start a session
-              </Link>
-              <a className="button button--lg" href="#guide">
-                How to use it ↓
-              </a>
-            </div>
-          </div>
-          <div className="hero__orb">
-            <Orb state="idle" size={190} />
-            <span className="orb-caption">the Vox orb — it reacts as you talk</span>
-          </div>
-        </section>
+          </article>
+          <article className="tile">
+            <h3 className="tile__title">Grammar, not substitution</h3>
+            <p className="tile__body">
+              &ldquo;What is your name?&rdquo; is signed{" "}
+              <strong>YOU NAME WHAT</strong>. Question words go last in ISL, the
+              copula is dropped, and time comes first and carries the tense.
+              Signed sentences are rebuilt into English by the same rules,
+              backwards.
+            </p>
+          </article>
+          <article className="tile">
+            <h3 className="tile__title">A signer, not a clip</h3>
+            <p className="tile__body">
+              Each sign is landmark motion driving one 3D figure built from
+              metric hand geometry. That is why it can be slowed, looped and
+              orbited — and why nobody&rsquo;s likeness ships with the app.
+            </p>
+          </article>
+        </div>
+      </section>
 
+      {recognition.loaded && (
         <section className="section">
-          <h2 className="section__heading">What we set out to build — and where it stands</h2>
-          <div className="claims">
-            <article className="claims__card claims__card--done">
-              <h3 className="claims__title">Working today</h3>
-              <ul className="claims__list">
-                {DONE.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+          <h2 className="section__title">How well it recognises</h2>
+          <p className="section__lede">
+            Measured on recordings the model never trained on, split by source
+            video so no recording appears on both sides. These are the real
+            numbers, not a best case.
+          </p>
+          <div className="grid">
+            <article className="tile">
+              <p className="tile__metric">
+                {Math.round(recognition.gatedPrecision * 100)}%
+              </p>
+              <h3 className="tile__title">correct when it speaks</h3>
+              <p className="tile__body">
+                Vox stays silent unless it clears a confidence bar. That is the
+                number that matters in use, because a wrong word is worse than
+                no word — it makes a hearing person act on something the signer
+                never said.
+              </p>
             </article>
-            <article className="claims__card claims__card--aim">
-              <h3 className="claims__title">The larger goal (not all of it is here yet)</h3>
-              <ul className="claims__list">
-                {AIMS.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-              <p className="disclaimer" style={{ marginTop: 14 }}>
-                Today Vox recognizes six greeting signs, each trained on 21
-                different signers. It is a working proof of the pipeline, not
-                a general ISL translator. Four further time-of-day greetings
-                were trained and then dropped: they share a handshape and the
-                model could not tell them apart reliably, so shipping them
-                would have meant shipping wrong answers.
+            <article className="tile">
+              <p className="tile__metric">
+                {Math.round(recognition.top1 * 100)}%
+              </p>
+              <h3 className="tile__title">
+                top-1 across all {recognition.classes} words
+              </h3>
+              <p className="tile__body">
+                Ungated, every word treated equally, against a{" "}
+                {(100 / Math.max(1, recognition.classes)).toFixed(1)}% chance
+                baseline. Low, and honestly so: most words have a single
+                recording to learn from.
+              </p>
+            </article>
+            <article className="tile">
+              <p className="tile__metric">{recognition.reliable.size}</p>
+              <h3 className="tile__title">words verified at 80%+</h3>
+              <p className="tile__body">
+                Words with enough recordings to hold one back and test properly.
+                The app marks every other word in the transcript so you can see
+                which predictions carry weight.
               </p>
             </article>
           </div>
         </section>
+      )}
 
-        <section className="section" id="guide">
-          <h2 className="section__heading">How to operate it</h2>
-          <div className="steps__grid">
-            {STEPS.map((step, index) => (
-              <article key={step.title} className="step">
-                <span className="step__n">{index + 1}</span>
-                <h3 className="step__title">{step.title}</h3>
-                <p className="step__body">{step.body}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
+      {sample.length > 0 && (
         <section className="section">
-          <h2 className="section__heading">Starter signs to try</h2>
-          <div className="signs">
-            {SIGNS.map((sign) => (
-              <article key={sign.word} className="sign-card">
-                <span className="sign-card__glyph" aria-hidden>{sign.glyph}</span>
-                <span className="sign-card__word">{sign.label}</span>
-                <span className="sign-card__how">{sign.how}</span>
-              </article>
-            ))}
-          </div>
-          <p className="disclaimer">
-            Descriptions are rough cues only — the real reference is in the
-            app: type the phrase in the Speech → ISL panel and{" "}
-            <strong>watch the actual clip Vox was trained on</strong>, plus
-            its 3D motion, then copy it. ISL varies by region; the clip's form
-            is the one the model knows.
+          <h2 className="section__title">Some of the vocabulary</h2>
+          <p className="section__lede">
+            The words the product was built around. The full list is in the app.
           </p>
-        </section>
-
-        <section className="section">
-          <h2 className="section__heading">Phrases to speak at it</h2>
-          <div className="phrases">
-            {PHRASES.map((phrase) => (
-              <span key={phrase} className="phrase">
-                “<strong>{phrase}</strong>”
+          <div className="wordcloud">
+            {sample.map((word) => (
+              <span className="wordcloud__item" key={word}>
+                {word}
               </span>
             ))}
           </div>
         </section>
+      )}
 
-        <section className="section">
-          <h2 className="section__heading">Under the hood</h2>
-          <div className="pipeline">
-            <span className="pipeline__node">Webcam</span>
-            <span className="pipeline__arrow">→</span>
-            <span className="pipeline__node">MediaPipe · Web Worker</span>
-            <span className="pipeline__arrow">→</span>
-            <span className="pipeline__node">126 landmarks/frame</span>
-            <span className="pipeline__arrow">→</span>
-            <span className="pipeline__node">WebSocket</span>
-            <span className="pipeline__arrow">→</span>
-            <span className="pipeline__node">LSTM + gating</span>
-            <span className="pipeline__arrow">→</span>
-            <span className="pipeline__node">Sentence</span>
-            <span className="pipeline__arrow">→</span>
-            <span className="pipeline__node">Voice (optional)</span>
-            <span style={{ flexBasis: "100%" }} />
-            No video ever leaves your machine — the camera feed is processed in
-            the browser and only landmark numbers reach the local backend.
-          </div>
-        </section>
-      </main>
+      <section className="section">
+        <h2 className="section__title">What it cannot do yet</h2>
+        <p className="section__lede">
+          Stated plainly. Each of these is a real limit of this build, not a
+          rough edge that polish would fix.
+        </p>
+        <div className="grid">
+          <article className="tile tile--limit">
+            <h3 className="tile__title">No facial grammar</h3>
+            <p className="tile__body">
+              ISL marks questions, negation and intensity on the face and body —
+              eyebrow raise, head shake, mouth morphemes. The avatar has none of
+              it and the recogniser is not trained on it, so output is
+              grammatical but flat.
+            </p>
+          </article>
+          <article className="tile tile--limit">
+            <h3 className="tile__title">One sign at a time</h3>
+            <p className="tile__body">
+              Recognition reads a two-second window and names one sign. Fluent
+              signing runs signs together with no gaps between them, and
+              separating those is an open research problem, not a setting.
+            </p>
+          </article>
+          <article className="tile tile--limit">
+            <h3 className="tile__title">Most words are unverified</h3>
+            <p className="tile__body">
+              The dictionary gives one signer per word. Accuracy can only be
+              measured for words with a spare recording to hold back; the rest
+              are trainable but unmeasured, and the transcript underlines them.
+              Recording yourself is the fastest way to fix this for the words you
+              actually use.
+            </p>
+          </article>
+        </div>
+      </section>
 
       <footer className="landing__foot">
-        <span>Vox — real-time ISL interpreter</span>
         <span>
-          Built for Deaf, hard-of-hearing, and hearing users alike — read it,
-          or hear it. Your choice.
+          Sign data from the{" "}
+          <a href="https://islrtc.nic.in/" target="_blank" rel="noreferrer noopener">
+            ISLRTC
+          </a>{" "}
+          ISL dictionary and the{" "}
+          <a
+            href="https://zenodo.org/records/4010759"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            INCLUDE
+          </a>{" "}
+          dataset (CC-BY-4.0).
         </span>
+        <span>Landmarks only — no video is stored or transmitted.</span>
       </footer>
     </div>
   );

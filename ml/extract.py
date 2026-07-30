@@ -42,6 +42,7 @@ from collect import (  # noqa: E402
     DEFAULT_POSE_MODEL_PATH,
     FEATURE_DIM,
     SEQUENCE_LENGTH,
+    aspect_scale,
     build_frame_vector,
     ensure_model,
     ensure_pose_model,
@@ -60,6 +61,10 @@ def video_to_frames(path: Path, landmarker, pose_landmarker) -> np.ndarray:
 
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     step = max(1, round(fps / TARGET_FPS))
+    # Non-16:9 sources are mapped onto the contract's aspect — see collect.py.
+    x_scale = aspect_scale(
+        cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    )
 
     vectors: list[np.ndarray] = []
     frame_index = 0
@@ -81,7 +86,7 @@ def video_to_frames(path: Path, landmarker, pose_landmarker) -> np.ndarray:
             result = landmarker.detect_for_video(image, timestamp_ms)
             pose_result = pose_landmarker.detect_for_video(image, timestamp_ms)
             timestamp_ms += 67  # ~15 FPS spacing; only monotonicity matters
-            vectors.append(build_frame_vector(result, pose_result))
+            vectors.append(build_frame_vector(result, pose_result, x_scale))
         frame_index += 1
     cap.release()
 

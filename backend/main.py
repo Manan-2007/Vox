@@ -80,6 +80,11 @@ async def lifespan(app: FastAPI):
 
     import keras  # slow import, and only needed once we know there's a model
 
+    # Importing this registers the custom layers the saved model is built from.
+    # Without it load_model raises "Unknown layer: AttentionPooling", and the
+    # only clue is a stack trace deep inside Keras deserialization.
+    import layers  # noqa: F401
+
     log.info("Loading model from %s", MODEL_PATH)
     model = keras.models.load_model(MODEL_PATH)
     labels = json.loads(LABEL_MAP_PATH.read_text())["labels"]

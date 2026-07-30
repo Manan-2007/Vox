@@ -104,7 +104,30 @@ IDLE_COLOR = (200, 200, 200)
 REC_COLOR = (0, 0, 255)
 
 
-def build_pose_block(pose_result) -> np.ndarray:
+#: The aspect ratio the feature contract is defined in.
+#:
+#: MediaPipe divides x by the frame width and y by the frame height, so a
+#: normalized coordinate is only comparable across the two axes at one aspect
+#: ratio. Everything this model has ever been trained on — the INCLUDE dataset
+#: and the ISLRTC dictionary clips — is 16:9, and normalize.py's shoulder-width
+#: anchor is measured in those units.
+#:
+#: Rather than redefine the contract (which would invalidate every sample
+#: already extracted), other aspect ratios are RESCALED ONTO it: x is multiplied
+#: by aspect / 16:9. A 16:9 source is therefore untouched, and a 4:3 webcam is
+#: mapped into the same geometry the model learned instead of presenting it with
+#: a signer who appears a third wider than any it has seen.
+REFERENCE_ASPECT = 16.0 / 9.0
+
+
+def aspect_scale(width: float, height: float) -> float:
+    """x multiplier that maps `width`x`height` onto the reference aspect."""
+    if not width or not height:
+        return 1.0
+    return (float(width) / float(height)) / REFERENCE_ASPECT
+
+
+def build_pose_block(pose_result, x_scale: float = 1.0) -> np.ndarray:
     """The 15-float pose block: nose, L/R shoulder, L/R elbow, in xyz."""
     block = np.zeros(POSE_DIM, dtype=np.float32)
     if not pose_result or not pose_result.pose_landmarks:
@@ -115,20 +138,22 @@ def build_pose_block(pose_result) -> np.ndarray:
             continue
         lm = landmarks[index]
         base = slot * COORDS_PER_LANDMARK
-        block[base] = lm.x
+        block[base] = lm.x * x_scale
         block[base + 1] = lm.y
         block[base + 2] = lm.z
     return block
 
 
-def build_frame_vector(result, pose_result=None) -> np.ndarray:
+def build_frame_vector(result, pose_result=None, x_scale: float = 1.0) -> np.ndarray:
     """Flatten hand (and pose) results into the 141-float frame vector.
 
     See the module docstring for the layout. This is the single place the
     ordering and zero-padding rules are implemented; the frontend mirrors it.
+
+    `x_scale` comes from `aspect_scale` and is 1.0 for 16:9 sources.
     """
     vec = np.zeros(FEATURE_DIM, dtype=np.float32)
-    vec[HANDS_DIM:] = build_pose_block(pose_result)
+    vec[HANDS_DIM:] = build_pose_block(pose_result, x_scale)
     if not result.hand_landmarks:
         return vec
 
@@ -151,7 +176,7 @@ def build_frame_vector(result, pose_result=None) -> np.ndarray:
         offset = block * FEATURES_PER_HAND
         for i, lm in enumerate(best[label][1][:LANDMARKS_PER_HAND]):
             base = offset + i * COORDS_PER_LANDMARK
-            vec[base] = lm.x
+            vec[base] = lm.x * x_scale
             vec[base + 1] = lm.y
             vec[base + 2] = lm.z
     return vec

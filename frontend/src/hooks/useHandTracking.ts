@@ -1,28 +1,50 @@
 /**
- * Camera capture on the main thread, MediaPipe detection in a Web Worker (P9).
+ * Camera capture on the main thread, MediaPipe detection in a Web Worker.
  *
- * Main thread: getUserMedia, ImageBitmap capture at ~15 FPS, skeleton drawing,
- * UI state. Worker: HandLandmarker + buildFrameVector (imported there, so the
- * 126-float contract with ml/collect.py is unchanged).
+ * Main thread: getUserMedia, ImageBitmap capture, overlay drawing, UI state.
+ * Worker: both landmarkers, stabilisation, and the 141-float frame vector.
  *
- * Backpressure: at most one frame is in flight. If the worker is still busy
- * when the next tick fires, that tick is skipped — latency stays bounded and
- * bitmaps never pile up in the message queue.
+ * ---------------------------------------------------------------------------
+ * TWO FRAME RATES, ON PURPOSE
+ * ---------------------------------------------------------------------------
+ * Detection runs as fast as the machine allows (up to DETECT_FPS). Frames are
+ * forwarded to the recogniser at SEND_FPS.
  *
- * Detection still runs on the RAW frame; only the preview is mirrored, in CSS.
+ * They are different numbers because they answer different questions.
+ * MediaPipe's VIDEO mode tracks each hand from its previous position, so the
+ * shorter the gap between frames the less it has to search and the less often it
+ * loses lock — detecting more often makes tracking strictly better. But the
+ * recogniser was trained on sequences sampled at 15 FPS, so a 30-frame window is
+ * two seconds of signing. Feeding it 30 FPS would hand it one second of signing
+ * in the same 30 slots, and every sign would look twice as fast as anything it
+ * was trained on.
+ *
+ * So: track fast, report at the rate training used. The 3D avatar and the
+ * overlay use every detected frame, because for them smoother is simply better.
+ *
+ * Backpressure: at most one frame is in flight. If the worker is still busy when
+ * the next tick fires, that tick is skipped — latency stays bounded and bitmaps
+ * never pile up in the message queue.
+ *
+ * Detection runs on the RAW frame; only the preview is mirrored, in CSS.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { DrawingUtils, HandLandmarker } from "@mediapipe/tasks-vision";
+import { FRAME_FLOATS, fromLiveFrame } from "../avatar/signMotion";
 import type {
   WorkerInMessage,
   WorkerOutMessage,
 } from "../workers/mediapipe.worker";
 
-export const TARGET_FPS = 15;
-const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
+/** Detection target. Capped by what the worker can actually keep up with. */
+export const DETECT_FPS = 30;
+/** The rate the recogniser is fed — must match ml/normalize.py's SEQUENCE_LENGTH basis. */
+export const SEND_FPS = 15;
 
-// Match the preview colours in ml/collect.py so both previews look the same.
-const HAND_COLOURS: Record<string, string> = { Left: "#38bdf8", Right: "#fbbf24" };
+const DETECT_INTERVAL_MS = 1000 / DETECT_FPS;
+const SEND_INTERVAL_MS = 1000 / SEND_FPS;
+
+/** Camera request. Higher is better for small/distant hands; 720p is the floor. */
+const CAPTURE = { width: 1280, height: 720 };
 
 export type TrackingStatus =
   | "starting"
@@ -30,6 +52,16 @@ export type TrackingStatus =
   | "loading-model"
   | "running"
   | "stopped";
+
+/** Per-frame honesty about what the tracker can actually see. */
+export interface FrameQuality {
+  hands: number;
+  body: boolean;
+  /** Consecutive missed frames per hand block, [left, right]. */
+  gaps: [number, number];
+  /** Rolling hand motion, normalized units per second. */
+  motion: number;
+}
 
 export interface HandTracking {
   videoRef: React.RefObject<HTMLVideoElement | null>;
@@ -42,8 +74,11 @@ export interface HandTracking {
   fps: number;
   /** Worker-side inference time for the latest frame, ms. */
   inferMs: number;
-  /** Latest raw 141-float frame, for the 3D avatar. */
+  /** Latest stabilised 141-float frame — the recogniser's view. */
   frame: Float32Array | null;
+  /** Latest 140-float avatar frame, so the live view uses the same 3D rig. */
+  avatarFrame: Float32Array | null;
+  quality: FrameQuality;
   /** Cameras available; labels populate once permission is granted. */
   devices: MediaDeviceInfo[];
   /** Switch camera; pass a deviceId from `devices`. */
@@ -54,7 +89,28 @@ export interface HandTracking {
   setCameraOn: (on: boolean) => void;
 }
 
-export function useHandTracking(onVector: (vector: Float32Array) => void): HandTracking {
+/** MediaPipe hand topology, for the overlay. */
+const HAND_CONNECTIONS: [number, number][] = [
+  [0, 1], [1, 2], [2, 3], [3, 4],
+  [0, 5], [5, 6], [6, 7], [7, 8],
+  [5, 9], [9, 10], [10, 11], [11, 12],
+  [9, 13], [13, 14], [14, 15], [15, 16],
+  [13, 17], [17, 18], [18, 19], [19, 20],
+  [0, 17],
+];
+/** Left block, right block. Matches the avatar's own two-tone hands. */
+const BLOCK_COLOURS = ["#7fd4c1", "#f0b775"];
+
+const IDLE_QUALITY: FrameQuality = {
+  hands: 0,
+  body: false,
+  gaps: [0, 0],
+  motion: 0,
+};
+
+export function useHandTracking(
+  onVector: (vector: Float32Array) => void,
+): HandTracking {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -63,8 +119,8 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
   onVectorRef.current = onVector;
 
   const workerRef = useRef<Worker | null>(null);
-  const drawingRef = useRef<DrawingUtils | null>(null);
   const pendingRef = useRef(false);
+  const lastSentRef = useRef(0);
 
   const [workerReady, setWorkerReady] = useState(false);
   const [status, setStatus] = useState<TrackingStatus>("starting");
@@ -72,6 +128,8 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
   const [delegate, setDelegate] = useState<"GPU" | "CPU" | null>(null);
   const [handsVisible, setHandsVisible] = useState(0);
   const [frame, setFrame] = useState<Float32Array | null>(null);
+  const [avatarFrame, setAvatarFrame] = useState<Float32Array | null>(null);
+  const [quality, setQuality] = useState<FrameQuality>(IDLE_QUALITY);
   const [fps, setFps] = useState(0);
   const [inferMs, setInferMs] = useState(0);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
@@ -123,31 +181,31 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
         w.count = 0;
       }
 
-      const canvas = canvasRef.current;
-      const drawing = drawingRef.current;
-      if (canvas && drawing) {
-        const ctx = canvas.getContext("2d")!;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        msg.landmarks.forEach((hand, i) => {
-          const label = msg.handedness[i]?.[0]?.categoryName ?? "";
-          const colour = HAND_COLOURS[label] ?? "#94a3b8";
-          drawing.drawConnectors(hand, HandLandmarker.HAND_CONNECTIONS, {
-            color: colour,
-            lineWidth: 3,
-          });
-          drawing.drawLandmarks(hand, { color: "#f8fafc", radius: 3 });
-        });
-      }
+      drawOverlay(canvasRef.current, msg.landmarks, msg.blocks);
 
-      if (msg.landmarks.length !== handCount.current) {
-        handCount.current = msg.landmarks.length;
-        setHandsVisible(msg.landmarks.length);
+      if (msg.hands !== handCount.current) {
+        handCount.current = msg.hands;
+        setHandsVisible(msg.hands);
       }
+      setQuality({
+        hands: msg.hands,
+        body: msg.body,
+        gaps: msg.gaps,
+        motion: msg.motion,
+      });
 
-      // vector.buffer is transferred, so hand a copy to the avatar before the
-      // socket call consumes it
+      // vector.buffer is transferred, so take the copies the UI needs before
+      // the socket call consumes it.
       setFrame(Float32Array.from(msg.vector));
-      onVectorRef.current(msg.vector);
+      setAvatarFrame(
+        fromLiveFrame(msg.vector, msg.world, new Float32Array(FRAME_FLOATS)),
+      );
+
+      // Down-sample to the rate the recogniser was trained at.
+      if (now - lastSentRef.current >= SEND_INTERVAL_MS) {
+        lastSentRef.current = now;
+        onVectorRef.current(msg.vector);
+      }
     };
 
     setStatus("loading-model");
@@ -176,6 +234,8 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
       setStatus("stopped");
       setHandsVisible(0);
       setFrame(null);
+      setAvatarFrame(null);
+      setQuality(IDLE_QUALITY);
       setFps(0);
       setError(null);
       return;
@@ -185,13 +245,17 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
     let stream: MediaStream | null = null;
     let raf = 0;
 
+    // A fresh camera means a fresh track: drop the smoother's and the hand
+    // assigner's history so the first frames are not blended with the old ones.
+    workerRef.current?.postMessage({ type: "reset" } satisfies WorkerInMessage);
+
     const start = async () => {
       try {
         setStatus("requesting-camera");
         stream = await navigator.mediaDevices.getUserMedia({
           video: cameraId
-            ? { deviceId: { exact: cameraId }, width: 1280, height: 720 }
-            : { width: 1280, height: 720 },
+            ? { deviceId: { exact: cameraId }, ...CAPTURE }
+            : CAPTURE,
           audio: false,
         });
         if (disposed) return;
@@ -200,8 +264,7 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
         navigator.mediaDevices
           .enumerateDevices()
           .then((all) => {
-            if (!disposed)
-              setDevices(all.filter((d) => d.kind === "videoinput"));
+            if (!disposed) setDevices(all.filter((d) => d.kind === "videoinput"));
           })
           .catch(() => {});
 
@@ -214,7 +277,6 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
         const canvas = canvasRef.current!;
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        drawingRef.current = new DrawingUtils(canvas.getContext("2d")!);
 
         setStatus("running");
         setError(null);
@@ -228,7 +290,7 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
           if (disposed) return;
 
           const now = performance.now();
-          if (now - lastFrame < FRAME_INTERVAL_MS) return; // ~15 FPS
+          if (now - lastFrame < DETECT_INTERVAL_MS) return;
           if (pendingRef.current) return; // worker still busy — skip
           const v = videoRef.current;
           if (!v || v.readyState < 2) return;
@@ -297,10 +359,53 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
     fps,
     inferMs,
     frame,
+    avatarFrame,
+    quality,
     devices,
     selectCamera,
     cameraId,
     cameraOn,
     setCameraOn,
   };
+}
+
+/** Draw the stabilised skeleton. Coordinates are normalized to the frame. */
+function drawOverlay(
+  canvas: HTMLCanvasElement | null,
+  hands: { x: number; y: number }[][],
+  blocks: number[],
+): void {
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const { width, height } = canvas;
+  ctx.clearRect(0, 0, width, height);
+
+  hands.forEach((points, i) => {
+    const colour = BLOCK_COLOURS[blocks[i]] ?? "#94a3b8";
+    ctx.lineCap = "round";
+    ctx.lineWidth = Math.max(2, width / 320);
+    ctx.strokeStyle = colour;
+    ctx.shadowColor = colour;
+    ctx.shadowBlur = 10;
+
+    ctx.beginPath();
+    for (const [from, to] of HAND_CONNECTIONS) {
+      const a = points[from];
+      const b = points[to];
+      if (!a || !b) continue;
+      ctx.moveTo(a.x * width, a.y * height);
+      ctx.lineTo(b.x * width, b.y * height);
+    }
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = "#ffffff";
+    const radius = Math.max(1.5, width / 480);
+    for (const point of points) {
+      ctx.beginPath();
+      ctx.arc(point.x * width, point.y * height, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
 }
