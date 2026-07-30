@@ -13,7 +13,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Orb, type OrbState } from "./Orb";
-import { SignAvatar3D } from "./SignAvatar3D";
+import { HandMesh3D } from "./HandMesh3D";
 import type { IslQueue } from "../isl/useIslQueue";
 import type { SpeechRecognitionState } from "../hooks/useSpeechRecognition";
 
@@ -106,12 +106,19 @@ export function SignVideoPanel({
       </header>
 
       <div className="panel__body panel__body--flush isl">
-        <div className={`isl__stage ${showVideo ? "isl__stage--video" : ""}`}>
+        <div className="isl__stage">
+          {/* The 3D hands ARE the sign. The recorded clip is kept only as a
+              small reference inset — it corroborates the model, it is not the
+              product. */}
+          {nowPlaying && (
+            <HandMesh3D frame={replayFrame} height={230} handsOnly autoRotate />
+          )}
+
           {showVideo && (
             <video
               ref={videoRef}
               key={nowPlaying.id}
-              className="isl__video"
+              className="isl__reference"
               src={nowPlaying.src}
               autoPlay
               muted
@@ -128,12 +135,9 @@ export function SignVideoPanel({
           )}
 
           {nowPlaying && missing && (
-            <div className="isl__card">
-              <p className="isl__card-word">{nowPlaying.word}</p>
-              <p className="isl__card-note">
-                clip file missing — supply clips/{manifest?.[nowPlaying.word]}
-              </p>
-            </div>
+            <p className="isl__card-note isl__card-note--float">
+              reference clip missing — the 3D hands still show the sign
+            </p>
           )}
 
           {!nowPlaying && (
@@ -153,12 +157,6 @@ export function SignVideoPanel({
 
           {nowPlaying && (
             <span className="isl__now">{nowPlaying.word}</span>
-          )}
-
-          {showVideo && replayFrame && (
-            <div className="isl__avatar" title="the same sign as 3D motion">
-              <SignAvatar3D frame={replayFrame} height={110} />
-            </div>
           )}
         </div>
 

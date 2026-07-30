@@ -126,6 +126,30 @@ def evenly_sample(items: list, cap: int) -> list:
     return [items[i] for i in sorted(set(idx.tolist()))]
 
 
+def rest_windows(frames: np.ndarray, stride: int) -> list[np.ndarray]:
+    """Windows from OUTSIDE the signing segment — hands down, walking in,
+    adjusting, transitions.
+
+    Without a class for "not a sign", a 6-way classifier must force every
+    gesture into one of its 6 words: idle hands become a confident wrong
+    answer. Training on the footage either side of the sign gives the model an
+    honest "nothing is happening" option, which is what makes the live system
+    stay quiet instead of guessing.
+    """
+    start, end = signing_segment(frames)
+    out = []
+    for lo, hi in ((0, start), (end, len(frames))):
+        region = frames[lo:hi]
+        if len(region) < SEQUENCE_LENGTH:
+            continue
+        for offset in range(0, len(region) - SEQUENCE_LENGTH + 1, stride):
+            window = region[offset : offset + SEQUENCE_LENGTH]
+            # keep it only if a BODY is visible — a black frame teaches nothing
+            if window[:, 126:].any(axis=1).mean() >= 0.7:
+                out.append(window.astype(np.float32))
+    return out
+
+
 def windows_from(frames: np.ndarray, stride: int) -> list[np.ndarray]:
     """All acceptable 30-frame windows over the signing segment."""
     start, end = signing_segment(frames)
@@ -154,6 +178,10 @@ def main() -> None:
     parser.add_argument("--stride", type=int, default=2)
     parser.add_argument("--max-per-video", type=int, default=10,
                         help="cap windows kept per video (0 = no cap)")
+    parser.add_argument("--rest-label", default=None, metavar="NAME",
+                        help="also emit a rejection class (e.g. 'rest') from the "
+                             "non-signing parts of each video")
+    parser.add_argument("--max-rest-per-video", type=int, default=2)
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL_PATH)
     args = parser.parse_args()
 
@@ -192,6 +220,18 @@ def main() -> None:
 
         start, end = signing_segment(frames)
         samples = evenly_sample(windows_from(frames, args.stride), args.max_per_video)
+
+        if args.rest_label:
+            rest = evenly_sample(
+                rest_windows(frames, args.stride), args.max_rest_per_video
+            )
+            if rest:
+                rest_dir = args.data_dir / args.rest_label
+                rest_dir.mkdir(parents=True, exist_ok=True)
+                stem_r = video.stem.split("__")[-1]
+                for i, sample in enumerate(rest):
+                    np.save(rest_dir / f"{label}-{stem_r}_{i:03d}.npy", sample)
+                counts[args.rest_label] += len(rest)
 
         out_dir = args.data_dir / label
         out_dir.mkdir(parents=True, exist_ok=True)

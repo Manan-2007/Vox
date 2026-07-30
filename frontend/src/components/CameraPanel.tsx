@@ -1,5 +1,5 @@
 /** Left column: webcam, skeleton overlay, live confidence, current word, FPS. */
-import { SignAvatar3D } from "./SignAvatar3D";
+import { HandMesh3D } from "./HandMesh3D";
 import type { HandTracking } from "../hooks/useHandTracking";
 import type { LiveGuess } from "../hooks/useVoxSocket";
 
@@ -126,9 +126,9 @@ export function CameraPanel({
       )}
 
       <div className="avatar3d-strip">
-        <SignAvatar3D frame={tracking.frame} height={150} />
+        <HandMesh3D frame={tracking.frame} height={168} />
         <span className="avatar3d-strip__label">
-          3D holistic motion — arms, both hands, body-anchored
+          your hands, in 3D — the exact data the model reads
         </span>
       </div>
 

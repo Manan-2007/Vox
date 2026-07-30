@@ -41,6 +41,10 @@ from normalize import FEATURE_DIM, SEQUENCE_LENGTH, normalize_frame  # noqa: E40
 
 CONFIDENCE_THRESHOLD = 0.85
 STABILITY_FRAMES = 3  # identical top class this many predictions in a row
+# A label the model may predict but which is never emitted as a word: it means
+# "no sign is being made". Training includes it so the classifier has an honest
+# way to reject idle hands instead of forcing them into a real word.
+REJECT_LABEL = "rest"
 
 MODEL_DIR = Path(os.environ.get("VOX_MODEL_DIR", ML_DIR / "models"))
 MODEL_PATH = MODEL_DIR / "vox_lstm.keras"
@@ -111,6 +115,7 @@ async def health():
     loaded = app.state.model is not None
     return {
         "status": "ok" if loaded else "degraded",
+        "reject_label": REJECT_LABEL,
         "model_loaded": loaded,
         "model_dir": str(MODEL_DIR),
         "labels": app.state.labels,
@@ -255,7 +260,8 @@ async def websocket_endpoint(websocket: WebSocket):
             )
 
             accept = (
-                confidence > conf_threshold
+                labels[top] != REJECT_LABEL
+                and confidence > conf_threshold
                 and stable_count >= STABILITY_FRAMES
                 # Latch: the window slides one frame at a time, so without this
                 # a held sign would re-emit its word on every single frame.
