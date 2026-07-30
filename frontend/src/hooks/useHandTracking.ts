@@ -49,6 +49,9 @@ export interface HandTracking {
   /** Switch camera; pass a deviceId from `devices`. */
   selectCamera: (deviceId: string) => void;
   cameraId: string | null;
+  /** Camera on/off. Off releases the device (the OS light goes out). */
+  cameraOn: boolean;
+  setCameraOn: (on: boolean) => void;
 }
 
 export function useHandTracking(onVector: (vector: Float32Array) => void): HandTracking {
@@ -73,6 +76,7 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
   const [inferMs, setInferMs] = useState(0);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [cameraId, setCameraId] = useState<string | null>(null);
+  const [cameraOn, setCameraOn] = useState(true);
 
   const fpsWindow = useRef({ start: 0, count: 0 });
   const handCount = useRef(-1);
@@ -165,6 +169,17 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
   /* --------------------------------- camera + capture loop, per cameraId -- */
   useEffect(() => {
     if (!workerReady) return;
+    if (!cameraOn) {
+      // Camera off: the previous effect's cleanup already stopped the tracks.
+      // Clear any prior camera error too — switching off is a deliberate act,
+      // not a failure, and a stale "permission denied" here reads as broken.
+      setStatus("stopped");
+      setHandsVisible(0);
+      setFrame(null);
+      setFps(0);
+      setError(null);
+      return;
+    }
 
     let disposed = false;
     let stream: MediaStream | null = null;
@@ -266,7 +281,7 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
       pendingRef.current = false;
       stream?.getTracks().forEach((track) => track.stop());
     };
-  }, [workerReady, cameraId]);
+  }, [workerReady, cameraId, cameraOn]);
 
   const selectCamera = useCallback((deviceId: string) => {
     setCameraId(deviceId || null);
@@ -285,5 +300,7 @@ export function useHandTracking(onVector: (vector: Float32Array) => void): HandT
     devices,
     selectCamera,
     cameraId,
+    cameraOn,
+    setCameraOn,
   };
 }

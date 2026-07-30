@@ -103,6 +103,29 @@ dictionary clips, but a class built only from those will memorise the signer.
 restart; the frontend needs no changes. Add a clip for the new word in
 `frontend/public/clips/` + `manifest.json`.
 
+## Why a sign might not be recognized
+
+The session view now shows the model's **live top-3** under the camera, plus a
+hint over the video when a frame is unusable. Read them in this order:
+
+1. **"Move back a little"** — your shoulders must be in frame. Normalization
+   anchors on them; without a body the frame is discarded and the model sees
+   literally nothing.
+2. **"No hands detected"** — raise your hands into view.
+3. **Top-3 shows your sign but below the marker** — it is being recognized but
+   not confidently enough. Lower the threshold in Settings, or match the
+   reference clip more closely.
+4. **Top-3 never lists your sign** — the model does not know that form. Watch
+   the clip in the Speech → ISL panel and copy it, or record your own samples
+   (below) and retrain.
+
+## Roadmap
+
+[docs/ROADMAP.md](docs/ROADMAP.md) assesses the four long-term goals —
+two-way conversation, generalization, continuous signing, and facial grammar
+— with what each actually costs, plus what is and is not reusable from the
+related ISL projects surveyed.
+
 ## Known limitations
 
 - **Small, fixed vocabulary of isolated signs** — continuous signing and

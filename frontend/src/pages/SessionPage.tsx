@@ -94,7 +94,7 @@ export function SessionPage() {
   useEffect(() => () => window.clearTimeout(pauseTimer.current), []);
 
   /* ------------------------------------------------------- socket + cam -- */
-  const { socket, live, buffered, error, noModel, send, setThreshold } =
+  const { socket, live, buffered, error, noModel, top3, quality, send, setThreshold } =
     useVoxSocket(handleWord);
   const tracking = useHandTracking(send);
 
@@ -171,6 +171,8 @@ export function SessionPage() {
           buffered={buffered}
           latestWord={latestWord}
           threshold={threshold}
+          top3={top3}
+          quality={quality}
         />
         <TranscriptPanel
           conversation={conversation}

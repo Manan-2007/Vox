@@ -30,9 +30,17 @@
   /* video wells stay dark so footage and skeletons read clearly */
   --stage: #29332c;
 
-  --radius: 12px;
-  --radius-sm: 8px;
-  --gap: 14px;
+  /* Glassmorphism tokens. Frosted panels over a soft coloured wash — the
+     blur needs something behind it, so .session paints gradient blobs. */
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-strong: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.75);
+  --glass-shadow: 0 8px 32px rgba(46, 56, 50, 0.10);
+  --blur: 18px;
+
+  --radius: 18px;
+  --radius-sm: 11px;
+  --gap: 20px;
 
   color-scheme: light;
 }
@@ -67,10 +75,16 @@ p {
 /* ---------------------------------------------------------------- shell -- */
 
 .session {
+  position: relative;
   height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background:
+    radial-gradient(60% 55% at 12% 8%, rgba(120, 155, 123, 0.20), transparent 62%),
+    radial-gradient(55% 50% at 88% 4%, rgba(214, 174, 130, 0.22), transparent 60%),
+    radial-gradient(65% 60% at 70% 96%, rgba(168, 185, 157, 0.20), transparent 65%),
+    var(--bg);
 }
 
 .topbar {
@@ -79,9 +93,11 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: var(--gap);
-  padding: 12px 18px;
-  border-bottom: 1px solid var(--border);
-  background: var(--panel);
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--glass-border);
+  background: var(--glass-strong);
+  backdrop-filter: blur(var(--blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4);
 }
 
 .topbar__brand {
@@ -146,11 +162,13 @@ p {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(46, 56, 50, 0.05);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(var(--blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(1.5);
 }
 
 .panel__head {
@@ -159,8 +177,15 @@ p {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 11px 14px;
-  border-bottom: 1px solid var(--border-soft);
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.panel__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .panel__title {
@@ -180,7 +205,7 @@ p {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px;
+  padding: 20px;
 }
 
 .panel__body--flush {
@@ -191,10 +216,10 @@ p {
 .panel__foot {
   flex: 0 0 auto;
   display: flex;
-  gap: 8px;
-  padding: 11px 14px;
-  border-top: 1px solid var(--border-soft);
-  background: var(--panel-raised);
+  gap: 10px;
+  padding: 15px 20px;
+  border-top: 1px solid var(--glass-border);
+  background: rgba(245, 242, 236, 0.55);
 }
 
 /* --------------------------------------------------------------- camera -- */
@@ -277,9 +302,9 @@ p {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   gap: var(--gap);
   align-items: center;
-  padding: 12px 14px;
-  border-top: 1px solid var(--border-soft);
-  background: var(--panel-raised);
+  padding: 16px 20px;
+  border-top: 1px solid var(--glass-border);
+  background: rgba(245, 242, 236, 0.5);
 }
 
 .readout__label {
@@ -356,7 +381,7 @@ p {
 .transcript {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 /* Bottom-anchor the log so the newest turn sits at the bottom even when the
@@ -378,10 +403,11 @@ p {
 
 .bubble {
   max-width: 88%;
-  padding: 9px 13px;
-  border-radius: 14px;
-  background: var(--panel-raised);
-  border: 1px solid var(--border);
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 2px 10px rgba(46, 56, 50, 0.05);
 }
 
 .bubble--signer {
@@ -633,13 +659,15 @@ p {
   top: 0;
   right: 0;
   bottom: 0;
-  width: min(360px, 92vw);
+  width: min(400px, 94vw);
   z-index: 41;
   display: flex;
   flex-direction: column;
-  background: var(--panel);
-  border-left: 1px solid var(--border);
-  box-shadow: -20px 0 50px rgba(46, 56, 50, 0.18);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(26px) saturate(1.5);
+  -webkit-backdrop-filter: blur(26px) saturate(1.5);
+  border-left: 1px solid var(--glass-border);
+  box-shadow: -20px 0 60px rgba(46, 56, 50, 0.18);
 }
 
 .drawer__head {
@@ -661,8 +689,8 @@ p {
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  padding: 18px 16px;
+  gap: 26px;
+  padding: 24px 22px;
 }
 
 .field {
@@ -737,10 +765,12 @@ p {
 
 .button {
   flex: 0 1 auto;
-  padding: 7px 13px;
+  padding: 9px 16px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--panel);
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: var(--text);
   font: inherit;
   font-size: 13px;
@@ -749,7 +779,7 @@ p {
 }
 
 .button:hover:not(:disabled) {
-  background: var(--panel-raised);
+  background: var(--glass-strong);
   border-color: var(--secondary);
 }
 
@@ -933,7 +963,7 @@ p {
 }
 
 .section {
-  padding: 26px clamp(20px, 5vw, 56px);
+  padding: 34px clamp(22px, 5vw, 64px);
 }
 
 .section__heading {
@@ -953,11 +983,13 @@ p {
 }
 
 .claims__card {
-  padding: 22px;
-  border: 1px solid var(--border);
+  padding: 28px;
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  background: var(--panel);
-  box-shadow: 0 1px 3px rgba(46, 56, 50, 0.05);
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4);
+  box-shadow: var(--glass-shadow);
 }
 
 .claims__card--done {
@@ -1015,11 +1047,13 @@ p {
 }
 
 .feature {
-  padding: 20px;
-  border: 1px solid var(--border);
+  padding: 26px;
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  background: var(--panel);
-  box-shadow: 0 1px 3px rgba(46, 56, 50, 0.05);
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur)) saturate(1.4);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(1.4);
+  box-shadow: var(--glass-shadow);
 }
 
 .feature__title {
@@ -1042,10 +1076,12 @@ p {
 }
 
 .step {
-  padding: 18px;
-  border: 1px solid var(--border);
+  padding: 24px;
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  background: var(--panel);
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
 }
 
 .step__n {
@@ -1084,12 +1120,21 @@ p {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 18px 12px 14px;
-  border: 1px solid var(--border);
+  gap: 8px;
+  padding: 24px 16px 20px;
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  background: var(--panel);
+  background: var(--glass);
+  backdrop-filter: blur(var(--blur));
+  -webkit-backdrop-filter: blur(var(--blur));
+  box-shadow: var(--glass-shadow);
   text-align: center;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.sign-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 34px rgba(46, 56, 50, 0.13);
 }
 
 .sign-card__glyph {
@@ -1249,14 +1294,15 @@ p {
 .avatar3d {
   width: 100%;
   background:
-    radial-gradient(120% 90% at 50% 0%, rgba(120, 155, 123, 0.10), transparent 70%),
-    var(--panel-raised);
+    radial-gradient(120% 95% at 50% 0%, rgba(120, 155, 123, 0.16), transparent 72%),
+    radial-gradient(90% 80% at 80% 100%, rgba(214, 174, 130, 0.16), transparent 70%),
+    rgba(255, 255, 255, 0.34);
 }
 
 .avatar3d-strip {
   position: relative;
   flex: 0 0 auto;
-  border-top: 1px solid var(--border-soft);
+  border-top: 1px solid var(--glass-border);
 }
 
 .avatar3d-strip__label {
@@ -1273,19 +1319,112 @@ p {
 /* the replay avatar floats over the clip so both are visible at once */
 .isl__avatar {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 10px;
+  bottom: 10px;
   width: 44%;
   min-width: 110px;
   border-radius: var(--radius-sm);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(41, 51, 44, 0.55);
-  backdrop-filter: blur(2px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
+  box-shadow: 0 6px 20px rgba(46, 56, 50, 0.18);
 }
 
 @media (max-width: 1180px) {
   .avatar3d-strip {
     display: none; /* laptop widths: the camera needs the height more */
   }
+}
+
+/* ------------------------------------------------- recognition feedback -- */
+
+/* The model's live top 3. Without this the app is a black box: a sign that
+   is "almost" recognized looks identical to one the model has never seen. */
+.top3 {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.top3__row {
+  display: grid;
+  grid-template-columns: 8.5rem 1fr 3rem;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+.top3__row--lead {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.top3__word {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top3__track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(46, 56, 50, 0.08);
+  overflow: hidden;
+}
+
+.top3__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--secondary), var(--accent));
+  transition: width 120ms linear;
+}
+
+.top3__row--lead .top3__fill {
+  background: linear-gradient(90deg, var(--accent), var(--good));
+}
+
+.top3__pct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Actionable guidance over the video, not a silent failure. */
+.stage__hint {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  max-width: 88%;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(41, 51, 44, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #f4f6f2;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+.button--icon {
+  font-size: 12.5px;
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+
+.button--off {
+  color: var(--error);
+  border-color: color-mix(in srgb, var(--error) 40%, var(--glass-border));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .top3__fill { transition: none; }
 }

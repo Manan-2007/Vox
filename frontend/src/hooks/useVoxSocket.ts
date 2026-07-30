@@ -31,6 +31,18 @@ export interface ConfirmedWord {
   confidence: number;
 }
 
+export interface Candidate {
+  word: string;
+  confidence: number;
+}
+
+/** Why a frame may be unusable — drives the on-screen guidance. */
+export interface FrameQuality {
+  hands: number;
+  body: boolean;
+  usable: boolean;
+}
+
 export interface VoxSocket {
   socket: SocketState;
   live: LiveGuess | null;
@@ -38,6 +50,10 @@ export interface VoxSocket {
   error: string | null;
   /** Backend is up but has no trained model — recognition disabled. */
   noModel: boolean;
+  /** The model's current top 3 candidates, live. */
+  top3: Candidate[];
+  /** Frame quality from the last frame the backend saw. */
+  quality: FrameQuality | null;
   send: (vector: Float32Array) => void;
   /** Set the backend's per-connection confidence threshold (re-sent on reconnect). */
   setThreshold: (value: number) => void;
@@ -55,6 +71,8 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
   const [buffered, setBuffered] = useState<{ have: number; need: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [noModel, setNoModel] = useState(false);
+  const [top3, setTop3] = useState<Candidate[]>([]);
+  const [quality, setQuality] = useState<FrameQuality | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -86,6 +104,8 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
         setSocket("closed");
         setLive(null);
         setBuffered(null);
+        setTop3([]);
+        setQuality(null);
         // The backend is often started after the page; retry quietly.
         reconnectTimer = window.setTimeout(connect, RECONNECT_MS);
       };
@@ -93,6 +113,8 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
       ws.onmessage = (event) => {
         if (disposed) return;
         const msg = JSON.parse(event.data as string);
+        if (msg.top3) setTop3(msg.top3);
+        if (msg.quality) setQuality(msg.quality);
         if (msg.word) {
           onWordRef.current({ word: msg.word, confidence: msg.confidence });
           setBuffered(null);
@@ -145,5 +167,5 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
     }
   }, []);
 
-  return { socket, live, buffered, error, noModel, send, setThreshold };
+  return { socket, live, buffered, error, noModel, top3, quality, send, setThreshold };
 }

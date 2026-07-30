@@ -143,7 +143,7 @@ def parse_landmarks(payload: dict) -> np.ndarray:
 
 
 async def predict(model, window: deque) -> np.ndarray:
-    """Run one prediction on the (1, 30, 126) window, off the event loop."""
+    """Run one prediction on the (1, SEQUENCE_LENGTH, FEATURE_DIM) window."""
     batch = np.stack(window)[None].astype(np.float32)
     async with _predict_lock:
         probs = await asyncio.to_thread(model.predict, batch, verbose=0)
@@ -211,19 +211,36 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_json({"error": str(exc)})
                 continue
 
-            window.append(normalize_frame(vec))
+            normalized = normalize_frame(vec)
+            window.append(normalized)
             frames += 1
+
+            # Frame quality, so the UI can say WHY nothing is happening rather
+            # than sitting silent: no body -> normalize_frame zeroes the frame
+            # and the model genuinely sees nothing.
+            quality = {
+                "hands": int(bool(vec[:126][:63].any())) + int(bool(vec[63:126].any())),
+                "body": bool(vec[126:].any()),
+                "usable": bool(normalized.any()),
+            }
 
             if len(window) < SEQUENCE_LENGTH:
                 await websocket.send_json(
                     {"status": "listening", "buffered": len(window),
-                     "needed": SEQUENCE_LENGTH}
+                     "needed": SEQUENCE_LENGTH, "quality": quality}
                 )
                 continue
 
             probs = await predict(model, window)
             top = int(np.argmax(probs))
             confidence = float(probs[top])
+            # Top-3 with scores: the single most useful thing for understanding
+            # why a sign is not being accepted.
+            ranked = np.argsort(probs)[::-1][:3]
+            top3 = [
+                {"word": labels[int(i)], "confidence": float(probs[int(i)])}
+                for i in ranked
+            ]
 
             if top == stable_class:
                 stable_count += 1
@@ -250,7 +267,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 emitted_class = top
                 log.info("WORD  %-16s conf=%.3f  (%s)", labels[top], confidence, client)
                 await websocket.send_json(
-                    {"word": labels[top], "confidence": confidence}
+                    {"word": labels[top], "confidence": confidence,
+                     "top3": top3, "quality": quality}
                 )
             else:
                 await websocket.send_json(
@@ -259,6 +277,8 @@ async def websocket_endpoint(websocket: WebSocket):
                         "top": labels[top],
                         "confidence": confidence,
                         "stable_for": stable_count,
+                        "top3": top3,
+                        "quality": quality,
                     }
                 )
 

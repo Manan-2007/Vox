@@ -37,8 +37,13 @@ const HAND_BONES: [number, number][] = [
 /** Pose block order: nose, L shoulder, R shoulder, L elbow, R elbow. */
 const POSE_BONES: [number, number][] = [[1, 2], [1, 3], [2, 4]];
 
-const HAND_COLOUR = [0x38a1d8, 0xd6ae82]; // left block, right block
+/* Vox palette, straight from the role table:
+   left hand = secondary #A8B99D, right hand = accent #D6AE82,
+   body = primary #789B7B, joints = surface white. */
+const HAND_COLOUR = [0xa8b99d, 0xd6ae82];
 const POSE_COLOUR = 0x789b7b;
+const JOINT_COLOUR = 0xffffff;
+const BONE_OPACITY = 0.9;
 const SMOOTHING = 0.35; // exponential smoothing on incoming frames
 
 interface Props {
@@ -72,10 +77,15 @@ export function SignAvatar3D({ frame, height = 200 }: Props) {
     renderer.setSize(width, height);
     mount.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 1.7));
-    const key = new THREE.DirectionalLight(0xffffff, 1.1);
-    key.position.set(1, 2, 3);
+    // Warm key + sage fill, so the skeleton reads as part of the palette
+    // rather than a debug overlay.
+    scene.add(new THREE.AmbientLight(0xfff6ea, 1.5));
+    const key = new THREE.DirectionalLight(0xffffff, 1.15);
+    key.position.set(1.2, 2, 3);
     scene.add(key);
+    const fill = new THREE.DirectionalLight(0x789b7b, 0.5);
+    fill.position.set(-2, -1, 1.5);
+    scene.add(fill);
 
     const root = new THREE.Group();
     // MediaPipe y grows downward and the preview is mirrored, so flip both.
@@ -87,7 +97,8 @@ export function SignAvatar3D({ frame, height = 200 }: Props) {
     const joints: THREE.Mesh[] = [];
     const makeJoints = (count: number, colour: number, size: number) => {
       const material = new THREE.MeshStandardMaterial({
-        color: colour, roughness: 0.45, metalness: 0.05,
+        color: colour, roughness: 0.35, metalness: 0.08,
+        emissive: new THREE.Color(colour).multiplyScalar(0.18),
       });
       for (let i = 0; i < count; i += 1) {
         const mesh = new THREE.Mesh(jointGeo, material);
@@ -97,9 +108,9 @@ export function SignAvatar3D({ frame, height = 200 }: Props) {
         joints.push(mesh);
       }
     };
-    makeJoints(LANDMARKS_PER_HAND, HAND_COLOUR[0], 1);
-    makeJoints(LANDMARKS_PER_HAND, HAND_COLOUR[1], 1);
-    makeJoints(POSE_POINTS, POSE_COLOUR, 1.5);
+    makeJoints(LANDMARKS_PER_HAND, JOINT_COLOUR, 0.9);
+    makeJoints(LANDMARKS_PER_HAND, JOINT_COLOUR, 0.9);
+    makeJoints(POSE_POINTS, POSE_COLOUR, 1.6);
 
     /* bones as line segments, one buffer per group */
     const makeBones = (bones: [number, number][], colour: number, offset: number) => {
@@ -108,7 +119,7 @@ export function SignAvatar3D({ frame, height = 200 }: Props) {
       geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
       const lines = new THREE.LineSegments(
         geometry,
-        new THREE.LineBasicMaterial({ color: colour, transparent: true, opacity: 0.85 }),
+        new THREE.LineBasicMaterial({ color: colour, transparent: true, opacity: BONE_OPACITY }),
       );
       lines.visible = false;
       root.add(lines);
