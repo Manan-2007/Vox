@@ -20,11 +20,29 @@ const RECONNECT_MS = 2000;
 
 export type SocketState = "connecting" | "open" | "closed";
 
+/**
+ * What the recogniser is currently considering — NOT what it has decided.
+ *
+ * Named `candidate` rather than `top` on purpose. The previous contract called
+ * it `top`, the component rendered it in the headline slot, and the model's
+ * argmax over 242 classes was therefore displayed exactly where a user reads
+ * "this is what you signed" — at any confidence, including 4%.
+ */
 export interface LiveGuess {
-  top: string;
+  candidate: string;
   confidence: number;
   stableFor: number;
+  /** Why this candidate was not accepted. */
+  reason: RejectReason;
 }
+
+/** Why the recogniser is not emitting a word. */
+export type RejectReason =
+  | "resting"
+  | "unverified"
+  | "low-confidence"
+  | "unstable"
+  | "already-emitted";
 
 export interface ConfirmedWord {
   word: string;
@@ -124,11 +142,12 @@ export function useVoxSocket(onWord: (word: ConfirmedWord) => void): VoxSocket {
           // ack only — nothing to render
         } else if (msg.status === "no-model") {
           setNoModel(true);
-        } else if (msg.top !== undefined) {
+        } else if (msg.candidate !== undefined) {
           setLive({
-            top: msg.top,
+            candidate: msg.candidate,
             confidence: msg.confidence,
             stableFor: msg.stable_for,
+            reason: (msg.reason ?? "low-confidence") as RejectReason,
           });
           setBuffered(null);
         } else if (msg.buffered !== undefined) {

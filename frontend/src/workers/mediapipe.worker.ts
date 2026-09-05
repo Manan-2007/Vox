@@ -45,10 +45,13 @@ import {
 import { POSE_LANDMARK_INDICES } from "../landmarks";
 import {
   aspectScale,
+  assembleAvatarPose,
   assembleFrame,
   FrameSmoother,
   HandAssigner,
   MotionEnergy,
+  POSE_VISIBILITY,
+  REFERENCE_ASPECT,
 } from "../tracking";
 
 /** See the module docstring for why these are well below MediaPipe's defaults. */
@@ -95,9 +98,21 @@ export interface ResultMessage {
    * shape, which is what the avatar is built from. See ml/build_motion.py.
    */
   world: Float32Array;
+  /**
+   * 39 floats: the 13 pose points the 3D figure is built from, square-scaled
+   * and visibility-gated. Same layout as the motion library's pose block, so
+   * one rig can draw the live signer and a recorded sign without knowing which
+   * it is holding. See AVATAR_POSE_INDICES in ../tracking.
+   */
+  pose: Float32Array;
   /** Hands actually resolved this frame, 0-2. */
   hands: number;
-  /** True when the pose block carries a usable shoulder anchor. */
+  /**
+   * True when the pose model actually SAW both shoulders — not merely when the
+   * block is non-zero. The old test was "some pose value is not zero", which is
+   * true even when the signer has left the room, because the model keeps
+   * extrapolating a body from whatever is in shot.
+   */
   body: boolean;
   /** Consecutive frames each block has been missing, [left, right]. */
   gaps: [number, number];
@@ -189,6 +204,11 @@ function detect(msg: FrameMessage) {
   // Read the frame's shape before it is consumed: the aspect correction below
   // needs it, and `close()` makes the bitmap unreadable.
   const xScale = aspectScale(msg.bitmap.width, msg.bitmap.height);
+  // The recogniser wants x rescaled onto the 16:9 geometry it was trained in;
+  // the avatar wants genuinely square units. They differ by exactly the
+  // reference aspect, and mixing them up makes the live figure a different
+  // shape from the recorded one.
+  const squareScale = xScale * REFERENCE_ASPECT;
   const result: HandLandmarkerResult = landmarker.detectForVideo(
     msg.bitmap,
     msg.timestamp,
@@ -216,6 +236,18 @@ function detect(msg: FrameMessage) {
   );
   const vector = smoother.smooth(raw, msg.timestamp);
   const energy = motion.update(vector, msg.timestamp);
+
+  // The avatar's own view of the body. Deliberately NOT the recogniser's
+  // vector: it carries more points, is gated on visibility, and is in square
+  // units. The recogniser's contract with ml/collect.py is left untouched,
+  // because changing what the model is fed at inference and not in training is
+  // how you get a model that silently stops working.
+  const poseLandmarks = pose?.landmarks?.[0];
+  const avatarPose = assembleAvatarPose(poseLandmarks, squareScale);
+  const shouldersSeen =
+    !!poseLandmarks &&
+    (poseLandmarks[11]?.visibility ?? 0) >= POSE_VISIBILITY &&
+    (poseLandmarks[12]?.visibility ?? 0) >= POSE_VISIBILITY;
 
   // World landmarks ride along with their own hand, so a swap decided by the
   // assigner moves both representations together.
@@ -253,14 +285,15 @@ function detect(msg: FrameMessage) {
       inferMs: performance.now() - started,
       vector,
       world,
+      pose: avatarPose.block,
       hands: landmarks.length,
-      body: vector.subarray(126).some((v) => v !== 0),
+      body: shouldersSeen,
       gaps: [assigner.gapFor(0), assigner.gapFor(1)],
       motion: energy,
       landmarks,
       blocks,
     },
-    [vector.buffer, world.buffer],
+    [vector.buffer, world.buffer, avatarPose.block.buffer],
   );
 }
 

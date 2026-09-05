@@ -350,6 +350,73 @@ export function aspectScale(width: number, height: number): number {
   return width / height / REFERENCE_ASPECT;
 }
 
+/* ------------------------------------------------------- the avatar's pose -- */
+
+/**
+ * The pose points the 3D figure needs, which are not the points the recogniser
+ * needs.
+ *
+ * The recogniser's five (nose and the shoulder/elbow pairs) are an *anchor*: it
+ * only has to know where the signing space is. A body has to be drawn, and for
+ * that the wrists, hips and ears are not optional — see the format-2 note in
+ * ml/build_motion.py. The order here is the same as POSE_INDICES there, because
+ * the two produce the same block and the rig cannot tell them apart.
+ */
+export const AVATAR_POSE_INDICES = [
+  0,   // nose
+  11, 12,  // shoulders
+  13, 14,  // elbows
+  15, 16,  // wrists
+  23, 24,  // hips
+  7, 8,    // ears
+  2, 5,    // eyes
+] as const;
+
+/**
+ * Below this, MediaPipe is extrapolating a joint it cannot see.
+ *
+ * This one constant is the difference between a figure that stands calmly when
+ * you step out of shot and one that thrashes. The pose model always returns 33
+ * landmarks — when the signer walks away it keeps returning them, positioned by
+ * inference from whatever is left in frame, and a rig that draws them without
+ * asking produces exactly the abrupt contortion the old build did. Visibility
+ * is the model's own answer to "did I actually see this", and it is reliable.
+ */
+export const POSE_VISIBILITY = 0.5;
+
+/**
+ * Build the avatar's 39-float pose block: 13 points x (x, y, z), square-scaled,
+ * with anything the model could not actually see written as zeros.
+ *
+ * `squareScale` is the raw aspect ratio (width / height), NOT the recogniser's
+ * aspect correction. MediaPipe normalizes x by width and y by height, so this
+ * converts x — and z, which shares x's scale — into units where all three axes
+ * measure the same distance. The rig computes real lengths and angles from
+ * these, so anisotropic units there mean a figure that is wrong by 78%.
+ */
+export function assembleAvatarPose(
+  pose: LandmarkLike[] | null | undefined,
+  squareScale: number,
+): { block: Float32Array; visible: number } {
+  const block = new Float32Array(AVATAR_POSE_INDICES.length * 3);
+  if (!pose) return { block, visible: 0 };
+
+  let visible = 0;
+  AVATAR_POSE_INDICES.forEach((index, slot) => {
+    const lm = pose[index] as (LandmarkLike & { visibility?: number }) | undefined;
+    if (!lm) return;
+    if ((lm.visibility ?? 1) < POSE_VISIBILITY) return;
+    const base = slot * 3;
+    // Exact zero means "absent" everywhere downstream, so nudge a coordinate
+    // that legitimately lands on the frame edge.
+    block[base] = lm.x * squareScale || 1e-5;
+    block[base + 1] = lm.y || 1e-5;
+    block[base + 2] = lm.z * squareScale;
+    visible += 1;
+  });
+  return { block, visible };
+}
+
 export function assembleFrame(
   hands: AssignedHands,
   pose: LandmarkLike[] | null | undefined,

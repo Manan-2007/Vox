@@ -198,11 +198,22 @@ export function useHandTracking(
       // the socket call consumes it.
       setFrame(Float32Array.from(msg.vector));
       setAvatarFrame(
-        fromLiveFrame(msg.vector, msg.world, new Float32Array(FRAME_FLOATS)),
+        msg.body
+          ? fromLiveFrame(
+              msg.vector,
+              msg.world,
+              msg.pose,
+              new Float32Array(FRAME_FLOATS),
+            )
+          : null,
       );
 
-      // Down-sample to the rate the recogniser was trained at.
-      if (now - lastSentRef.current >= SEND_INTERVAL_MS) {
+      // Down-sample to the rate the recogniser was trained at, and only while
+      // there is a body to anchor against. Normalization divides by the
+      // shoulder span (ml/normalize.py); feeding it frames from an empty room
+      // produces confident-looking nonsense — which is exactly what the live
+      // readout used to show when nobody was there.
+      if (msg.body && now - lastSentRef.current >= SEND_INTERVAL_MS) {
         lastSentRef.current = now;
         onVectorRef.current(msg.vector);
       }

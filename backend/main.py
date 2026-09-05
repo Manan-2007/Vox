@@ -46,9 +46,35 @@ STABILITY_FRAMES = 3  # identical top class this many predictions in a row
 # way to reject idle hands instead of forcing them into a real word.
 REJECT_LABEL = "rest"
 
+# ---------------------------------------------------------------------------
+# VOCABULARY GATING — why the model knows 242 words and offers 37
+# ---------------------------------------------------------------------------
+# Measured on the held-out split (ml/models/metrics.json):
+#
+#     242 classes, 1065 training samples, MEDIAN 2 SAMPLES PER CLASS
+#     top-1 accuracy 0.382
+#     37 classes at 80%+ ; 118 classes with no test sample at all
+#
+# 4.4 samples per class is not a tuning problem, it is the information-theoretic
+# ceiling of this dataset. No threshold recovers a class the model never learned.
+#
+# Offering all 242 and being right 38% of the time is worse than offering 37 and
+# being right 80% of the time, and for an accessibility product it is much worse:
+# this is used in medical conversations, where a confidently wrong word is a
+# safety problem rather than an annoyance. So a prediction outside the verified
+# set is never emitted — it is reported as unrecognised, which is true.
+#
+# The gate is DATA, not a hard-coded list: ml/evaluate.py writes the verified set
+# after measuring it, so retraining on more data widens the vocabulary
+# automatically. Set VOX_VERIFIED_ONLY=0 to disable for debugging.
+VERIFIED_ONLY = os.environ.get("VOX_VERIFIED_ONLY", "1") != "0"
+# Words at or above this held-out accuracy are offered to users.
+VERIFIED_ACCURACY = 0.8
+
 MODEL_DIR = Path(os.environ.get("VOX_MODEL_DIR", ML_DIR / "models"))
 MODEL_PATH = MODEL_DIR / "vox_lstm.keras"
 LABEL_MAP_PATH = MODEL_DIR / "label_map.json"
+METRICS_PATH = MODEL_DIR / "metrics.json"
 
 logging.basicConfig(
     level=os.environ.get("VOX_LOG_LEVEL", "INFO"),
@@ -107,9 +133,66 @@ async def lifespan(app: FastAPI):
 
     app.state.model = model
     app.state.labels = labels
-    log.info("Ready — %d labels: %s", len(labels), ", ".join(labels))
+    app.state.verified = load_verified(labels)
+
+    log.info("Ready — %d labels", len(labels))
+    if VERIFIED_ONLY:
+        log.info(
+            "Emitting only the %d VERIFIED word(s) (>=%.0f%% on held-out "
+            "recordings); the other %d are recognised internally but reported "
+            "as unrecognised. Set VOX_VERIFIED_ONLY=0 to disable.",
+            len(app.state.verified),
+            VERIFIED_ACCURACY * 100,
+            len(labels) - len(app.state.verified),
+        )
+        log.info("  %s", ", ".join(sorted(app.state.verified)))
+    else:
+        log.warning(
+            "VOX_VERIFIED_ONLY=0 — all %d classes may be emitted. Measured "
+            "top-1 on this model is 38%%; do not use this setting in front of "
+            "a real user.",
+            len(labels),
+        )
     yield
     log.info("Shutting down")
+
+
+def load_verified(labels: list[str]) -> set[str]:
+    """The words measured accurate enough to offer, from ml/evaluate.py's output.
+
+    Read from disk rather than hard-coded so that retraining widens the
+    vocabulary without a code change. A missing or unreadable metrics file is
+    NOT treated as "everything is fine" — with no evidence, nothing is verified,
+    and the app says so. Failing open here would silently restore exactly the
+    behaviour this gate exists to prevent.
+    """
+    if not METRICS_PATH.exists():
+        log.warning(
+            "%s not found — no word has measured accuracy, so none will be "
+            "emitted. Run: python ml/evaluate.py",
+            METRICS_PATH,
+        )
+        return set()
+    try:
+        metrics = json.loads(METRICS_PATH.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        log.error("Could not read %s (%s) — treating no word as verified", METRICS_PATH, exc)
+        return set()
+
+    # Prefer the explicit list; fall back to recomputing from per-class scores so
+    # an older metrics file still works.
+    reliable = metrics.get("reliable")
+    if isinstance(reliable, list):
+        verified = {word for word in reliable if word in labels}
+    else:
+        verified = {
+            word
+            for word, stats in (metrics.get("per_class") or {}).items()
+            if word in labels
+            and stats.get("verified")
+            and (stats.get("top1") or 0) >= VERIFIED_ACCURACY
+        }
+    return verified
 
 
 app = FastAPI(title="Vox", version="0.1.0", lifespan=lifespan)
@@ -124,6 +207,8 @@ async def health():
         "model_loaded": loaded,
         "model_dir": str(MODEL_DIR),
         "labels": app.state.labels,
+        "verified_only": VERIFIED_ONLY,
+        "verified": sorted(getattr(app.state, "verified", set())),
         "sequence_length": SEQUENCE_LENGTH,
         "feature_dim": FEATURE_DIM,
         "confidence_threshold": CONFIDENCE_THRESHOLD,
@@ -166,6 +251,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     model = app.state.model
     labels = app.state.labels
+    verified: set[str] = getattr(app.state, "verified", set())
     if model is None:
         # Stay connected: the speech->ISL half of the app works without a
         # model, and closing here put the frontend into a reconnect loop that
@@ -264,29 +350,61 @@ async def websocket_endpoint(websocket: WebSocket):
                 confidence, stable_count,
             )
 
+            # Why each condition is here:
+            #   reject      — the model's own "no sign is being made" class
+            #   verified    — see the VOCABULARY GATING note at the top
+            #   confidence  — the calibration gate
+            #   stability   — the same class must win several predictions running
+            #   latch       — the window slides one frame at a time, so without
+            #                 this a held sign re-emits on every single frame
+            word = labels[top]
+            is_reject = word == REJECT_LABEL
+            is_verified = (not VERIFIED_ONLY) or word in verified
             accept = (
-                labels[top] != REJECT_LABEL
+                not is_reject
+                and is_verified
                 and confidence > conf_threshold
                 and stable_count >= STABILITY_FRAMES
-                # Latch: the window slides one frame at a time, so without this
-                # a held sign would re-emit its word on every single frame.
-                # Cleared above when the winning class changes.
                 and emitted_class != top
             )
 
             if accept:
                 emitted_class = top
-                log.info("WORD  %-16s conf=%.3f  (%s)", labels[top], confidence, client)
+                log.info("WORD  %-16s conf=%.3f  (%s)", word, confidence, client)
                 await websocket.send_json(
-                    {"word": labels[top], "confidence": confidence,
+                    {"word": word, "confidence": confidence,
                      "top3": top3, "quality": quality}
                 )
             else:
+                # Say WHY nothing was emitted.
+                #
+                # The frontend used to render `top3[0].word` in the headline slot
+                # regardless of confidence, so the model's argmax over 242 classes
+                # — frequently a word with two training samples and 0% held-out
+                # accuracy — was displayed exactly where a user reads "this is
+                # what you signed". The backend was already refusing to emit it;
+                # the interface was showing it anyway. `reason` exists so the UI
+                # can never make that mistake again by omission.
+                if is_reject:
+                    reason = "resting"
+                elif not is_verified:
+                    reason = "unverified"
+                elif confidence <= conf_threshold:
+                    reason = "low-confidence"
+                elif stable_count < STABILITY_FRAMES:
+                    reason = "unstable"
+                else:
+                    reason = "already-emitted"
+
                 await websocket.send_json(
                     {
                         "status": "listening",
-                        "top": labels[top],
+                        # Deliberately NOT called "top": the old key invited the
+                        # client to treat it as a prediction. This is a candidate.
+                        "candidate": word,
                         "confidence": confidence,
+                        "accepted": False,
+                        "reason": reason,
                         "stable_for": stable_count,
                         "top3": top3,
                         "quality": quality,
