@@ -58,6 +58,23 @@ your name?", not read out as three words. Both the English sentence and the raw
 gloss appear in the transcript, so it is always visible when the reconstruction
 has guessed.
 
+### The face is part of the grammar
+
+In ISL a raised brow is not an expression, it is a morpheme. `YOU DOCTOR` with
+brows raised is *"Are you a doctor?"*; with brows furrowed and a head tilt it is
+*"Which doctor are you?"*. The signing figure carries these:
+
+| clause | what the face does | scope |
+|---|---|---|
+| yes/no question | brows raised, head forward | the whole clause, peaking on the last sign |
+| WH question | brows furrowed, slight squint and tilt | the whole clause, peaking on the question word |
+| negation | head shake | the verb and everything after it |
+| topic | brows raised, small tilt back | the leading time word or pronoun |
+
+The marker in play is named next to the gloss, so it reads as grammar rather
+than as the avatar having a mood. Vox can *produce* non-manual grammar; it
+cannot yet *read* it — see [docs/ROADMAP.md](docs/ROADMAP.md).
+
 ## The 3D signer
 
 Every sign is landmark motion driving one rigged figure. The hands are built
@@ -77,21 +94,37 @@ The same rig also mirrors your own signing, so a learner comparing themselves
 against the reference is looking at one object rather than two different
 renderings of the same thing.
 
+The figure is **anatomically constrained rather than drawn from the tracker**.
+That distinction is what makes it hold together: bone lengths are fixed, so an
+arm cannot stretch when MediaPipe misplaces an elbow; depth is recovered from
+the bone rather than trusted from the tracker's weak `z`; a limb is kept out of
+the chest it would otherwise pass through; an untracked elbow is solved by IK
+instead of dropping the forearm; and when you step out of frame the figure
+relaxes into a standing rest pose over half a second instead of reacting to
+whatever the pose model hallucinates in an empty room.
+
+Those are invariants, not intentions —
+`frontend/src/avatar/__checks__/skeleton.check.ts` runs the solver over all
+7,189 frames of the library and measures each one. See
+[docs/3D-AVATAR.md](docs/3D-AVATAR.md).
+
 ---
 
 ## Honest limits
 
 Read this before showing Vox to anyone who might rely on it.
 
-**No facial grammar.** ISL marks questions, negation and intensity on the face
-and body — eyebrow raise, head shake, mouth morphemes. The avatar has none of it
-and the recogniser is not trained on it. Output is grammatical but flat, and a
-Deaf signer will notice immediately.
+**Facial grammar only goes one way.** The avatar produces the clause-type
+markers — brow raise, brow furrow, head shake, topic marking — but the
+recogniser cannot read them. A signed yes/no question therefore arrives as a
+statement, and mouth morphemes, spatial reference and role shift are absent in
+both directions.
 
-**One sign at a time.** Recognition reads a two-second window and names one
-sign. Fluent signing runs signs together with no gaps, and separating them
-(continuous sign language recognition) is an open research problem, not a
-setting.
+**One sign at a time — when reading.** Recognition takes a two-second window and
+names one sign. Fluent signing runs signs together with no gaps, and separating
+them (continuous sign language recognition) is an open research problem, not a
+setting. Playback is not subject to this: a phrase is performed as one animation
+with real transitional movement between signs.
 
 **Most words are unmeasured.** The dictionary provides one signer per word.
 Accuracy can only be measured for words with a spare recording to hold back;

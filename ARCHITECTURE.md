@@ -28,8 +28,10 @@ because a model is running.
 | Vocabulary (production) | **239 signs** from the ISLRTC dictionary | The avatar only needs one recording per word, so breadth is cheap here |
 | Vocabulary (recognition) | The same 239, but only **37 verified at 80%+** | Recognition needs many recordings per word; the dictionary supplies one |
 | Recognition mode | **Isolated words** (one sign at a time) | Continuous segmentation is a research problem, not a setting |
-| Landmarks | **141 floats**: 2 hands × 21 × xyz, plus 5 pose points | The pose block is the body anchor; without it only finger shape survives |
-| Avatar geometry | MediaPipe **world landmarks** (metric, 3D) | Image-space z is a weak guess and produces a flat hand |
+| Landmarks (recogniser) | **141 floats**: 2 hands × 21 × xyz, plus 5 pose points | The pose block is the body anchor; without it only finger shape survives |
+| Landmarks (avatar) | **169 floats**: hand world landmarks plus **13** pose points with depth | A body has to be *drawn*, and wrists, hips and ears are not optional for that |
+| Avatar geometry | MediaPipe **world landmarks** (metric, 3D) plus fixed anatomy | Image-space z is a weak guess; anatomy supplies what it cannot |
+| Non-manual grammar | **Synthesised from the syntax** | Dictionary clips are citation forms with neutral faces — the marker is not in them |
 | Sentence building | Confirmed words → ISL grammar → English | Word order carries meaning; a word list is not a sentence |
 
 ---
@@ -85,12 +87,31 @@ differently, predictions are garbage.
 
 ## Frontend design
 
-- **Target UX (built later): conversation-first split screen.**
-  - Left: large webcam + hand skeleton + confidence + detected word
-  - Center: the running conversation (never scrolls away)
-  - Right: ISL video playback (for speech → sign)
+- **Conversation-first split screen.** Left: one lit stage carrying either the
+  reference signing or your own. Right: the running conversation, the live
+  recognition readout, and the composer.
 - MediaPipe runs in a **Web Worker** so the React thread stays smooth.
-- **Spike UX (built first): one ugly page** — webcam + predicted word. Nothing else.
+- The worker emits **two views of the same frame**: the recogniser's 141-float
+  vector, whose contract is frozen against `ml/collect.py`, and a separate
+  13-point pose block for the avatar that is visibility-gated and in square
+  units. Mixing them is how you get a model that silently stops working.
+
+## The avatar
+
+Two files, and the split is the point:
+
+- `avatar/skeleton.ts` — where the body is. Recovers depth, enforces fixed bone
+  lengths, solves an unseen elbow by IK, keeps limbs out of the chest, and
+  relaxes to a rest pose when tracking stops.
+- `avatar/rig.ts` — what the body is made of. Lofted torso, tapered limbs with
+  deltoids, world-landmark hands, and a head with brows, lids and a mouth,
+  because in ISL those carry grammar.
+
+Both are exercised headlessly by `avatar/__checks__/skeleton.check.ts`, which
+runs the solver over every frame of the library and asserts that bones never
+change length, no joint ends up inside the torso, no arm goes missing, and
+losing the input never moves a joint faster than the eye reads as a snap. See
+`docs/3D-AVATAR.md`.
 
 ---
 

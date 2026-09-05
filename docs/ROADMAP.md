@@ -8,6 +8,13 @@ The stated ambition:
 3. Continuous signing — whole sentences signed fluidly, not word by word.
 4. Facial expression and body pose as part of meaning, the way real ISL uses them.
 
+Note on goal 3: *recognising* continuous signing and *producing* it are separate
+problems, and only the first is unsolved here. Playback already renders a phrase
+as one continuous animation — sign, hold, then an eased transitional movement
+into the next sign — because a reader segments the stream on exactly those
+transitions. Concatenating recordings end to end, which is what the first
+version did, produces one continuous blur with no word boundaries in it.
+
 Nothing below is marked done unless it is measured. Numbers come from
 `ml/models/metrics.json`, produced by `python ml/evaluate.py` on a test split
 held out by source video.
@@ -105,22 +112,49 @@ biggest gap between Vox and an interpreter.
 
 ---
 
-## 4. Face and body as meaning — **body done, face not**
+## 4. Face and body as meaning — **body done, face done in one direction**
 
-- **Body: done.** Shoulders, elbows and nose are in the frame contract, and
-  normalization anchors on the shoulders. This is what made recognition work at
-  all.
-- **Face: absent.** ISL uses eyebrows, mouth morphemes, head tilt and gaze
-  grammatically — negation, questions and intensity live there. Vox is blind to
-  all of it, and the avatar cannot produce any of it.
+- **Body: done.** Shoulders, elbows and nose are in the recogniser's frame
+  contract, and normalization anchors on the shoulders. This is what made
+  recognition work at all. The avatar carries a wider 13-point block with depth,
+  so the figure is a body rather than a flat diagram — see `docs/3D-AVATAR.md`.
 
-Adding it is *mechanically* straightforward and *scientifically* not. MediaPipe
-`FaceLandmarker` gives 52 blendshape coefficients, which is a compact and
-well-suited representation. That is a contract change and a retrain.
+- **Face, production: done.** The avatar has a face and uses it grammatically.
+  `frontend/src/isl/grammar.ts` decides the clause type and
+  `frontend/src/avatar/nonManual.ts` turns it into brows, lids, mouth and head
+  movement, scoped to the right signs:
 
-**The blocker is labels.** The dictionary labels *words*, not facial grammar. A
-model given face features but no facial-grammar labels learns nothing new from
-them. Worth doing only alongside a corpus annotated for non-manual markers.
+  | clause | marker | scope |
+  |---|---|---|
+  | polar question | brows raised, head forward | whole clause, peaking on the last sign |
+  | content question | brows furrowed, squint, head tilt | whole clause, peaking on the WH sign |
+  | negation | head shake | the verb and everything after it, stopping before a WH sign |
+  | topic | brows raised, small tilt back | the leading time or pronoun |
+
+  Scope is the part that matters. Marking only the negation sign itself — the
+  obvious implementation — produces a sentence a signer reads as "you go… no?".
+
+  The markers are **synthesised from the syntax rather than extracted from the
+  dictionary clips**, and that is not a shortcut. Those clips are citation
+  forms: one word signed in isolation with a deliberately neutral face. The
+  marker belongs to the sentence, not the word, so it is not in any recording of
+  a word.
+
+- **Face, recognition: still absent.** Vox cannot *read* a signer's brows, so a
+  signed yes/no question still arrives as a statement.
+
+  Adding it is mechanically straightforward and scientifically not. MediaPipe
+  `FaceLandmarker` gives 52 blendshape coefficients, which is a compact and
+  well-suited representation. That is a contract change and a retrain.
+
+  **The blocker is labels.** The dictionary labels *words*, not facial grammar.
+  A model given face features but no facial-grammar labels learns nothing new
+  from them. Worth doing only alongside a corpus annotated for non-manual
+  markers.
+
+**Still not modelled in either direction:** mouth morphemes that distinguish
+minimal pairs, use of signing space to set up a referent and point back at it,
+and role shift.
 
 ---
 
