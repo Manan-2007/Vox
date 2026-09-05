@@ -27,20 +27,31 @@
  *     I UNDERSTAND NOT.
  *
  * ---------------------------------------------------------------------------
- * WHAT THIS DOES NOT DO
+ * NON-MANUAL GRAMMAR
  * ---------------------------------------------------------------------------
- * Non-manual grammar — the eyebrow raise that marks a yes/no question, the head
- * shake that scopes negation, mouth morphemes, the use of space to set up
- * referents and then point back at them — is absent, because the avatar has no
- * face and the recogniser has no labels for any of it. A Deaf signer will read
- * this output as grammatical-but-flat: correct order, missing prosody. That is a
- * real limitation and it is stated in the UI rather than hidden.
+ * Clause type in ISL is carried on the FACE, not in the word order alone: a
+ * raised brow makes a statement a yes/no question, a furrowed brow and a tilt
+ * mark a content question, and negation is scoped by a head shake over the signs
+ * it applies to. Producing the right hands with a blank face is producing half a
+ * sentence, so this file also emits a marker per token — see ../avatar/nonManual
+ * for what each one is and why it is synthesised here rather than recorded.
  *
+ * ---------------------------------------------------------------------------
+ * WHAT THIS STILL DOES NOT DO
+ * ---------------------------------------------------------------------------
+ * Mouth morphemes that distinguish minimal pairs, and the use of signing space
+ * to set up a referent and point back at it, are absent in both directions.
  * Classifier predicates and verb agreement (directing GIVE from signer to
  * addressee rather than signing a neutral GIVE) are also out of scope: they need
  * a rig that can aim a sign, not a library of fixed recordings.
  */
 
+import {
+  face,
+  MARKERS,
+  NEUTRAL_FACE,
+  type NonManual,
+} from "../avatar/nonManual";
 import {
   ENGLISH_BY_GLOSS,
   POS_BY_GLOSS,
@@ -130,7 +141,11 @@ export interface GlossToken {
   pos: PartOfSpeech;
   /** True when there is no sign in the library for this word. */
   missing: boolean;
+  /** The face to carry over this sign. Never null — neutral is a value. */
+  face: NonManual;
 }
+
+export type ClauseType = "statement" | "polar" | "content";
 
 export interface GlossResult {
   tokens: GlossToken[];
@@ -140,6 +155,12 @@ export interface GlossResult {
   notation: string;
   /** True when the sentence was reordered as a question. */
   question: boolean;
+  /** What kind of clause this is — the thing the face has to mark. */
+  clause: ClauseType;
+  /** True when a head shake scopes part of the phrase. */
+  negated: boolean;
+  /** Human-readable summary of the non-manual marking, for the UI. */
+  markers: string[];
 }
 
 /**
@@ -152,6 +173,11 @@ export interface GlossResult {
  * sentence.
  */
 export function toGloss(text: string, available: ReadonlySet<string>): GlossResult {
+  // Punctuation is stripped by normalizeEnglish, so the question mark has to be
+  // read first. It is the only evidence a yes/no question gives: "you are a
+  // doctor" and "are you a doctor" gloss to the same three signs, and the
+  // difference between them lives entirely on the face.
+  const askedAsQuestion = /\?\s*$/.test(text.trim());
   const words = normalizeEnglish(text);
 
   // Pass 1: words -> glosses, longest phrase first.
@@ -274,6 +300,7 @@ export function toGloss(text: string, available: ReadonlySet<string>): GlossResu
       label: tense === "past" ? "(past)" : "(future)",
       pos: "time",
       missing: !available.has(marker),
+      face: NEUTRAL_FACE,
     });
   }
 
@@ -285,6 +312,7 @@ export function toGloss(text: string, available: ReadonlySet<string>): GlossResu
         label: entry.label,
         pos: "noun",
         missing: true,
+        face: NEUTRAL_FACE,
       });
       continue;
     }
@@ -293,6 +321,7 @@ export function toGloss(text: string, available: ReadonlySet<string>): GlossResu
       label: entry.label,
       pos: entry.pos ?? "noun",
       missing: !available.has(entry.gloss),
+      face: NEUTRAL_FACE,
     });
   }
 
@@ -305,18 +334,122 @@ export function toGloss(text: string, available: ReadonlySet<string>): GlossResu
       label: "not",
       pos: "response",
       missing: !available.has("no"),
+      face: NEUTRAL_FACE,
     };
     if (questionAt >= 0) tokens.splice(questionAt, 0, negation);
     else tokens.push(negation);
   }
 
+  const isContent = tokens.some((token) => token.pos === "question");
+  const clause: ClauseType = isContent
+    ? "content"
+    : askedAsQuestion
+      ? "polar"
+      : "statement";
+  const markers = markUp(tokens, clause, negated);
+
   return {
     tokens,
     unmatched,
     notation: tokens.map((token) => token.gloss.toUpperCase()).join(" "),
-    question: tokens.some((token) => token.pos === "question"),
+    question: isContent || clause === "polar",
+    clause,
+    negated,
+    markers,
   };
 }
+
+/* ------------------------------------------------------- non-manual pass -- */
+
+/**
+ * Assign a face to every token, in place, and describe what was assigned.
+ *
+ * Scope is the whole point. A brow raise on a polar question is held over the
+ * entire clause and peaks on its last sign; a WH marker is held over the clause
+ * and peaks on the question word; a head shake covers the verb and everything
+ * after it, which is what tells a reader that "GO" is what is being negated
+ * rather than the subject. Marking only the negation sign itself — the obvious
+ * implementation — produces a sentence a signer reads as "you go... no?".
+ */
+function markUp(
+  tokens: GlossToken[],
+  clause: ClauseType,
+  negated: boolean,
+): string[] {
+  if (tokens.length === 0) return [];
+  const notes: string[] = [];
+  const faces = tokens.map(() => ({ ...NEUTRAL_FACE }));
+
+  const apply = (index: number, marker: NonManual, weight: number) => {
+    const target = faces[index];
+    for (const key of Object.keys(NEUTRAL_FACE) as (keyof NonManual)[]) {
+      const value = marker[key] * weight;
+      // Strongest wins per channel, so a brow raise and a head shake coexist
+      // but two brow instructions do not average into nothing.
+      if (Math.abs(value) > Math.abs(target[key])) target[key] = value;
+    }
+  };
+
+  if (clause === "content") {
+    const at = tokens.findIndex((token) => token.pos === "question");
+    tokens.forEach((_, index) => apply(index, MARKERS.contentQuestion, 0.6));
+    if (at >= 0) apply(at, MARKERS.contentQuestion, 1);
+    notes.push("brows furrowed — content question");
+  } else if (clause === "polar") {
+    tokens.forEach((_, index) => apply(index, MARKERS.polarQuestion, 0.7));
+    apply(tokens.length - 1, MARKERS.polarQuestion, 1);
+    notes.push("brows raised — yes/no question");
+  } else {
+    // A statement's topic — a leading time sign or pronoun — takes a brow raise
+    // and a small tilt, released before the comment.
+    const first = tokens[0];
+    if (tokens.length > 1 && (first.pos === "time" || first.pos === "pronoun")) {
+      apply(0, MARKERS.topic, 1);
+      notes.push("brows raised on the topic");
+    }
+    if (!negated && tokens.length > 1) {
+      apply(tokens.length - 1, MARKERS.affirm, 0.55);
+    }
+  }
+
+  if (negated) {
+    // Scope: from the verb (or, failing that, the negation sign) to the end,
+    // stopping before a question word, which is never inside the negation.
+    let from = tokens.findIndex((token) => token.pos === "verb");
+    if (from < 0) from = tokens.findIndex((token) => token.gloss === "no");
+    if (from < 0) from = Math.max(0, tokens.length - 1);
+    for (let index = from; index < tokens.length; index += 1) {
+      if (tokens[index].pos === "question") break;
+      apply(index, MARKERS.negation, index === from ? 0.8 : 1);
+    }
+    notes.push("head shake over the negated part");
+  }
+
+  // Lexical faces: some signs are simply not made with a neutral one.
+  tokens.forEach((token, index) => {
+    if (WARM.has(token.gloss)) apply(index, MARKERS.warm, 1);
+    if (DISCOMFORT.has(token.gloss)) apply(index, MARKERS.discomfort, 1);
+    if (token.gloss === "yes") apply(index, MARKERS.affirm, 1);
+    if (token.gloss === "no" && !negated) apply(index, MARKERS.negation, 0.9);
+  });
+
+  tokens.forEach((token, index) => {
+    token.face = face(faces[index]);
+  });
+  return notes;
+}
+
+/** Signs that read as cold or rude on a neutral face. */
+const WARM = new Set([
+  "hello", "thankyou", "please", "welcome", "goodmorning", "goodnight",
+  "goodbye", "happy", "goodafternoon", "goodevening", "nicetomeetyou",
+]);
+
+/** Signs whose meaning includes the face that goes with them. */
+const DISCOMFORT = new Set([
+  "pain", "sick", "sorry", "sad", "afraid", "tired", "headache", "fever",
+  "hurt", "emergency", "accident", "problem", "difficult", "angry", "bad",
+]);
 
 function normalizeEnglish(text: string): string[] {
   let lowered = text.toLowerCase();

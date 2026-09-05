@@ -81,8 +81,19 @@ export function SessionPage() {
   const finishRef = useRef(finishSentence);
   finishRef.current = finishSentence;
 
+  /* The last ACCEPTED word, held briefly so the headline can show it.
+
+     Held rather than derived, because acceptance is an event and the readout is
+     a surface. Deriving it from the live candidate is exactly the mistake the
+     old readout made — see components/Recognition.tsx. */
+  const [accepted, setAccepted] = useState<ConfirmedWord | null>(null);
+  const acceptedTimer = useRef<number | undefined>(undefined);
+
   const handleWord = useCallback(
     (word: ConfirmedWord) => {
+      setAccepted(word);
+      window.clearTimeout(acceptedTimer.current);
+      acceptedTimer.current = window.setTimeout(() => setAccepted(null), 2200);
       conversation.appendWord(word);
       // The signer has taken the floor: stop showing the reference.
       setStageMode("live");
@@ -100,12 +111,13 @@ export function SessionPage() {
     () => () => {
       window.clearTimeout(pauseTimer.current);
       window.clearTimeout(stageTimer.current);
+      window.clearTimeout(acceptedTimer.current);
     },
     [],
   );
 
   /* ------------------------------------------------------- socket + cam -- */
-  const { socket, error, noModel, top3, quality, send, setThreshold } =
+  const { socket, error, noModel, live, top3, quality, send, setThreshold } =
     useVoxSocket(handleWord);
   const tracking = useHandTracking(send);
 
@@ -194,6 +206,7 @@ export function SessionPage() {
           ready={ready}
           loadingSigns={signs.loading}
           onQueueDone={handleQueueDone}
+          live={live}
         />
 
         <section className="card card--talk card--signer">
@@ -219,6 +232,8 @@ export function SessionPage() {
             />
             <Recognition
               top3={top3}
+              live={live}
+              accepted={accepted}
               threshold={threshold}
               quality={quality}
               active={ready && tracking.cameraOn}

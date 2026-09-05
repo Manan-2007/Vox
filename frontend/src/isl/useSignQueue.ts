@@ -86,6 +86,10 @@ export function useSignQueue(): SignQueue {
           label: token.label,
           motion,
           missing: motion === null,
+          // The clause-type marking the grammar decided on. It travels with the
+          // sign because it is scoped to the sign: a head shake that starts one
+          // word early negates the wrong thing.
+          face: token.face,
         };
       }),
     );

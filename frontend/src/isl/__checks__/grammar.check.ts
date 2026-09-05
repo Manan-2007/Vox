@@ -32,6 +32,33 @@ for (const s of english) {
   console.log(`${s.padEnd(36)} -> ${r.notation}${miss}`);
 }
 
+/**
+ * Clause type is carried on the FACE, and it is scoped to particular signs — a
+ * head shake that starts one word early negates the wrong thing. The per-sign
+ * markers are printed rather than only the clause label, because the scope is
+ * the part that is easy to get wrong and impossible to see in a gloss.
+ */
+console.log("\n=== NON-MANUAL MARKING ===");
+const marked = [
+  "What is your name?",
+  "Are you a doctor?",
+  "You are a doctor",
+  "I do not want medicine",
+  "Tomorrow I will go to the hospital",
+  "Thank you",
+  "My stomach hurts",
+];
+for (const s of marked) {
+  const r = toGloss(s, available);
+  console.log(`\n${s}\n  ${r.notation}   [${r.clause}]  ${r.markers.join(" · ")}`);
+  for (const t of r.tokens) {
+    const on = (Object.keys(t.face) as (keyof typeof t.face)[])
+      .filter((k) => Math.abs(t.face[k]) > 0.01)
+      .map((k) => `${k} ${t.face[k].toFixed(2)}`);
+    console.log(`    ${t.gloss.toUpperCase().padEnd(12)} ${on.join("  ") || "—"}`);
+  }
+}
+
 console.log("\n=== ISL GLOSS -> ENGLISH ===");
 const glosses: string[][] = [
   ["you", "name", "what"],

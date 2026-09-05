@@ -19,6 +19,7 @@ import {
   type QueueItem,
 } from "../avatar/signMotion";
 import { useRecognitionQuality } from "../isl/useRecognitionQuality";
+import { Vocabulary } from "../components/Vocabulary";
 
 /** The hero loop: a real sentence, not a word list. */
 const HERO_PHRASE: [string, string][] = [
@@ -261,6 +262,11 @@ export function LandingPage() {
           </article>
         </div>
       </section>
+
+      <Vocabulary
+        quality={recognition}
+        signable={new Set(available)}
+      />
 
       <footer className="landing__foot">
         <span>

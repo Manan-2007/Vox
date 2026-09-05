@@ -52,6 +52,12 @@ export function Composer({
       {lastGloss && lastGloss.tokens.length > 0 && (
         <p className="turn__gloss" style={{ marginTop: 0 }}>
           ISL · {lastGloss.notation}
+          {/* The non-manual marking is grammar, so it is named rather than left
+              for the viewer to notice. Without this the face just looks like
+              the avatar having a mood. */}
+          {lastGloss.markers.length > 0 && (
+            <span className="turn__marker"> · {lastGloss.markers.join(" · ")}</span>
+          )}
           {lastGloss.unmatched.length > 0 && (
             <span style={{ color: "var(--warn)" }}>
               {"  ·  no sign yet for "}
