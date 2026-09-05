@@ -1,22 +1,25 @@
 {
  "_source": "ISLRTC official Indian Sign Language dictionary (Government of India). Landmarks only \u2014 no video is shipped.",
+ "format": 2,
  "fps": 15,
  "signs": {
   "accident": {
    "english": "accident",
    "pos": "noun",
-   "frames": 34,
-   "seconds": 2.27,
+   "frames": 37,
+   "seconds": 2.47,
    "twoHanded": true,
-   "quality": 0.956
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "afraid": {
    "english": "afraid",
    "pos": "adjective",
    "frames": 28,
    "seconds": 1.87,
-   "twoHanded": false,
-   "quality": 0.929
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "afternoon": {
    "english": "afternoon",
@@ -24,23 +27,26 @@
    "frames": 33,
    "seconds": 2.2,
    "twoHanded": false,
-   "quality": 0.833
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "again": {
    "english": "again",
    "pos": "adverb",
-   "frames": 34,
-   "seconds": 2.27,
-   "twoHanded": false,
-   "quality": 0.985
+   "frames": 31,
+   "seconds": 2.07,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "all": {
    "english": "all",
    "pos": "quantifier",
-   "frames": 38,
-   "seconds": 2.53,
+   "frames": 37,
+   "seconds": 2.47,
    "twoHanded": true,
-   "quality": 0.996
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "always": {
    "english": "always",
@@ -48,94 +54,106 @@
    "frames": 27,
    "seconds": 1.8,
    "twoHanded": false,
-   "quality": 0.833
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "ambulance": {
    "english": "ambulance",
    "pos": "noun",
    "frames": 33,
    "seconds": 2.2,
-   "twoHanded": false,
-   "quality": 0.939
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "angry": {
    "english": "angry",
    "pos": "adjective",
-   "frames": 21,
-   "seconds": 1.4,
-   "twoHanded": false,
-   "quality": 0.905
+   "frames": 23,
+   "seconds": 1.53,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "answer": {
    "english": "answer",
    "pos": "verb",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 25,
+   "seconds": 1.67,
    "twoHanded": true,
-   "quality": 0.977
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "ask": {
    "english": "ask",
    "pos": "verb",
-   "frames": 39,
-   "seconds": 2.6,
+   "frames": 33,
+   "seconds": 2.2,
    "twoHanded": false,
-   "quality": 0.924
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "baby": {
    "english": "baby",
    "pos": "noun",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 23,
+   "seconds": 1.53,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "bad": {
    "english": "bad",
    "pos": "adjective",
-   "frames": 18,
-   "seconds": 1.2,
-   "twoHanded": false,
-   "quality": 0.972
+   "frames": 20,
+   "seconds": 1.33,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "bag": {
    "english": "bag",
    "pos": "noun",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 24,
+   "seconds": 1.6,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "bank": {
    "english": "bank",
    "pos": "noun",
-   "frames": 28,
-   "seconds": 1.87,
-   "twoHanded": false,
+   "frames": 29,
+   "seconds": 1.93,
+   "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "beautiful": {
    "english": "beautiful",
    "pos": "adjective",
-   "frames": 20,
-   "seconds": 1.33,
-   "twoHanded": false,
+   "frames": 22,
+   "seconds": 1.47,
+   "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "big": {
    "english": "big",
    "pos": "adjective",
-   "frames": 20,
-   "seconds": 1.33,
+   "frames": 21,
+   "seconds": 1.4,
    "twoHanded": true,
-   "quality": 0.975
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "blood": {
    "english": "blood",
    "pos": "noun",
-   "frames": 29,
-   "seconds": 1.93,
+   "frames": 30,
+   "seconds": 2.0,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "book": {
@@ -143,32 +161,36 @@
    "pos": "noun",
    "frames": 34,
    "seconds": 2.27,
-   "twoHanded": false,
-   "quality": 0.956
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "boy": {
    "english": "boy",
    "pos": "noun",
-   "frames": 25,
-   "seconds": 1.67,
-   "twoHanded": false,
-   "quality": 0.94
+   "frames": 29,
+   "seconds": 1.93,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "bread": {
    "english": "bread",
    "pos": "noun",
-   "frames": 32,
-   "seconds": 2.13,
+   "frames": 33,
+   "seconds": 2.2,
    "twoHanded": true,
-   "quality": 0.969
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "brother": {
    "english": "brother",
    "pos": "noun",
-   "frames": 29,
-   "seconds": 1.93,
-   "twoHanded": false,
-   "quality": 0.983
+   "frames": 30,
+   "seconds": 2.0,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "bus": {
    "english": "bus",
@@ -176,31 +198,35 @@
    "frames": 37,
    "seconds": 2.47,
    "twoHanded": true,
-   "quality": 0.932
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "busy": {
    "english": "busy",
    "pos": "adjective",
    "frames": 50,
    "seconds": 3.33,
-   "twoHanded": false,
-   "quality": 0.843
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 0.917
   },
   "call": {
    "english": "call",
    "pos": "verb",
-   "frames": 23,
-   "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.978
+   "frames": 28,
+   "seconds": 1.87,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "can": {
    "english": "can",
    "pos": "verb",
-   "frames": 39,
-   "seconds": 2.6,
+   "frames": 18,
+   "seconds": 1.2,
    "twoHanded": true,
-   "quality": 0.963
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "car": {
    "english": "car",
@@ -208,14 +234,16 @@
    "frames": 27,
    "seconds": 1.8,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "careful": {
    "english": "careful",
    "pos": "adjective",
-   "frames": 27,
-   "seconds": 1.8,
+   "frames": 29,
+   "seconds": 1.93,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "cheap": {
@@ -224,15 +252,17 @@
    "frames": 31,
    "seconds": 2.07,
    "twoHanded": false,
-   "quality": 0.903
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "child": {
    "english": "child",
    "pos": "noun",
    "frames": 52,
    "seconds": 3.47,
-   "twoHanded": false,
-   "quality": 0.849
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 0.903
   },
   "city": {
    "english": "city",
@@ -240,22 +270,25 @@
    "frames": 29,
    "seconds": 1.93,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "clean": {
    "english": "clean",
    "pos": "adjective",
-   "frames": 36,
-   "seconds": 2.4,
+   "frames": 37,
+   "seconds": 2.47,
    "twoHanded": true,
-   "quality": 0.972
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "close": {
    "english": "close",
    "pos": "verb",
-   "frames": 27,
-   "seconds": 1.8,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "clothes": {
@@ -264,135 +297,152 @@
    "frames": 75,
    "seconds": 5.0,
    "twoHanded": true,
-   "quality": 0.695
+   "coverage": 1.0,
+   "quality": 0.75
   },
   "cold": {
    "english": "cold",
    "pos": "adjective",
-   "frames": 21,
-   "seconds": 1.4,
+   "frames": 23,
+   "seconds": 1.53,
    "twoHanded": true,
-   "quality": 0.976
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "college": {
    "english": "college",
    "pos": "noun",
-   "frames": 32,
-   "seconds": 2.13,
-   "twoHanded": false,
-   "quality": 0.969
+   "frames": 28,
+   "seconds": 1.87,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "come": {
    "english": "come",
    "pos": "verb",
-   "frames": 16,
-   "seconds": 1.07,
-   "twoHanded": false,
-   "quality": 0.938
+   "frames": 18,
+   "seconds": 1.2,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "cook": {
    "english": "cook",
    "pos": "verb",
-   "frames": 24,
-   "seconds": 1.6,
+   "frames": 25,
+   "seconds": 1.67,
    "twoHanded": true,
-   "quality": 0.958
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "cough": {
    "english": "cough",
    "pos": "noun",
    "frames": 34,
    "seconds": 2.27,
-   "twoHanded": false,
-   "quality": 0.956
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "danger": {
    "english": "danger",
    "pos": "adjective",
-   "frames": 30,
-   "seconds": 2.0,
+   "frames": 31,
+   "seconds": 2.07,
    "twoHanded": true,
-   "quality": 0.95
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "day": {
    "english": "day",
    "pos": "time",
-   "frames": 23,
-   "seconds": 1.53,
+   "frames": 27,
+   "seconds": 1.8,
    "twoHanded": true,
-   "quality": 0.978
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "deaf": {
    "english": "deaf",
    "pos": "adjective",
-   "frames": 33,
-   "seconds": 2.2,
+   "frames": 32,
+   "seconds": 2.13,
    "twoHanded": false,
-   "quality": 0.939
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "different": {
    "english": "different",
    "pos": "adjective",
-   "frames": 18,
-   "seconds": 1.2,
+   "frames": 21,
+   "seconds": 1.4,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "difficult": {
    "english": "difficult",
    "pos": "adjective",
-   "frames": 36,
-   "seconds": 2.4,
-   "twoHanded": false,
-   "quality": 0.944
+   "frames": 37,
+   "seconds": 2.47,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "doctor": {
    "english": "doctor",
    "pos": "noun",
    "frames": 23,
    "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.957
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "dontknow": {
    "english": "don't know",
    "pos": "verb",
-   "frames": 27,
-   "seconds": 1.8,
-   "twoHanded": false,
-   "quality": 0.944
+   "frames": 28,
+   "seconds": 1.87,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "drink": {
    "english": "drink",
    "pos": "verb",
-   "frames": 20,
-   "seconds": 1.33,
-   "twoHanded": false,
-   "quality": 0.9
+   "frames": 22,
+   "seconds": 1.47,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "drive": {
    "english": "drive",
    "pos": "verb",
-   "frames": 34,
-   "seconds": 2.27,
+   "frames": 35,
+   "seconds": 2.33,
    "twoHanded": true,
-   "quality": 0.956
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "early": {
    "english": "early",
    "pos": "time",
-   "frames": 27,
-   "seconds": 1.8,
-   "twoHanded": false,
+   "frames": 30,
+   "seconds": 2.0,
+   "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "easy": {
    "english": "easy",
    "pos": "adjective",
-   "frames": 23,
-   "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.978
+   "frames": 25,
+   "seconds": 1.67,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "eat": {
    "english": "eat",
@@ -400,15 +450,17 @@
    "frames": 27,
    "seconds": 1.8,
    "twoHanded": false,
-   "quality": 0.944
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "egg": {
    "english": "egg",
    "pos": "noun",
-   "frames": 29,
-   "seconds": 1.93,
-   "twoHanded": false,
-   "quality": 0.948
+   "frames": 31,
+   "seconds": 2.07,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "eight": {
    "english": "eight",
@@ -416,63 +468,71 @@
    "frames": 31,
    "seconds": 2.07,
    "twoHanded": false,
-   "quality": 0.952
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "emergency": {
    "english": "emergency",
    "pos": "noun",
-   "frames": 32,
-   "seconds": 2.13,
+   "frames": 34,
+   "seconds": 2.27,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "empty": {
    "english": "empty",
    "pos": "adjective",
-   "frames": 28,
-   "seconds": 1.87,
+   "frames": 30,
+   "seconds": 2.0,
    "twoHanded": true,
-   "quality": 0.964
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "evening": {
    "english": "evening",
    "pos": "time",
-   "frames": 24,
-   "seconds": 1.6,
-   "twoHanded": false,
-   "quality": 0.917
+   "frames": 27,
+   "seconds": 1.8,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "expensive": {
    "english": "expensive",
    "pos": "adjective",
-   "frames": 27,
-   "seconds": 1.8,
-   "twoHanded": false,
-   "quality": 0.926
+   "frames": 35,
+   "seconds": 2.33,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "family": {
    "english": "family",
    "pos": "noun",
    "frames": 75,
    "seconds": 5.0,
-   "twoHanded": false,
-   "quality": 0.374
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 0.75
   },
   "fast": {
    "english": "fast",
    "pos": "adjective",
-   "frames": 27,
-   "seconds": 1.8,
-   "twoHanded": false,
-   "quality": 0.981
+   "frames": 25,
+   "seconds": 1.67,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "father": {
    "english": "father",
    "pos": "noun",
-   "frames": 27,
-   "seconds": 1.8,
+   "frames": 32,
+   "seconds": 2.13,
    "twoHanded": false,
-   "quality": 0.963
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "fever": {
    "english": "fever",
@@ -480,55 +540,62 @@
    "frames": 54,
    "seconds": 3.6,
    "twoHanded": true,
-   "quality": 0.835
+   "coverage": 1.0,
+   "quality": 0.89
   },
   "fifty": {
    "english": "fifty",
    "pos": "number",
-   "frames": 41,
-   "seconds": 2.73,
+   "frames": 23,
+   "seconds": 1.53,
    "twoHanded": true,
-   "quality": 0.973
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "find": {
    "english": "find",
    "pos": "verb",
    "frames": 34,
    "seconds": 2.27,
-   "twoHanded": false,
-   "quality": 0.941
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "finish": {
    "english": "finish",
    "pos": "verb",
    "frames": 31,
    "seconds": 2.07,
-   "twoHanded": false,
-   "quality": 0.984
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "fire": {
    "english": "fire",
    "pos": "noun",
    "frames": 34,
    "seconds": 2.27,
-   "twoHanded": false,
-   "quality": 0.868
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "five": {
    "english": "five",
    "pos": "number",
    "frames": 28,
    "seconds": 1.87,
-   "twoHanded": false,
-   "quality": 0.964
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "food": {
    "english": "food",
    "pos": "noun",
-   "frames": 27,
-   "seconds": 1.8,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.926
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "forget": {
    "english": "forget",
@@ -536,31 +603,35 @@
    "frames": 34,
    "seconds": 2.27,
    "twoHanded": false,
-   "quality": 0.941
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "four": {
    "english": "four",
    "pos": "number",
-   "frames": 31,
-   "seconds": 2.07,
-   "twoHanded": false,
-   "quality": 0.935
+   "frames": 32,
+   "seconds": 2.13,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "free": {
    "english": "free",
    "pos": "adjective",
-   "frames": 26,
-   "seconds": 1.73,
+   "frames": 35,
+   "seconds": 2.33,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "friend": {
    "english": "friend",
    "pos": "noun",
-   "frames": 24,
-   "seconds": 1.6,
-   "twoHanded": false,
-   "quality": 0.979
+   "frames": 27,
+   "seconds": 1.8,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "fruit": {
    "english": "fruit",
@@ -568,7 +639,8 @@
    "frames": 35,
    "seconds": 2.33,
    "twoHanded": true,
-   "quality": 0.957
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "full": {
    "english": "full",
@@ -576,7 +648,8 @@
    "frames": 24,
    "seconds": 1.6,
    "twoHanded": true,
-   "quality": 0.958
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "girl": {
    "english": "girl",
@@ -584,103 +657,116 @@
    "frames": 45,
    "seconds": 3.0,
    "twoHanded": false,
-   "quality": 0.842
+   "coverage": 0.933,
+   "quality": 0.922
   },
   "give": {
    "english": "give",
    "pos": "verb",
-   "frames": 20,
-   "seconds": 1.33,
-   "twoHanded": false,
-   "quality": 0.925
+   "frames": 22,
+   "seconds": 1.47,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "go": {
    "english": "go",
    "pos": "verb",
-   "frames": 18,
-   "seconds": 1.2,
-   "twoHanded": false,
-   "quality": 0.972
+   "frames": 19,
+   "seconds": 1.27,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "good": {
    "english": "good",
    "pos": "adjective",
-   "frames": 28,
-   "seconds": 1.87,
+   "frames": 29,
+   "seconds": 1.93,
    "twoHanded": false,
-   "quality": 0.946
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "goodafternoon": {
    "english": "good afternoon",
    "pos": "greeting",
-   "frames": 26,
-   "seconds": 1.73,
+   "frames": 27,
+   "seconds": 1.8,
    "twoHanded": false,
-   "quality": 0.942
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "goodbye": {
    "english": "goodbye",
    "pos": "greeting",
-   "frames": 25,
-   "seconds": 1.67,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.98
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "goodevening": {
    "english": "good evening",
    "pos": "greeting",
-   "frames": 24,
-   "seconds": 1.6,
-   "twoHanded": false,
-   "quality": 0.917
+   "frames": 27,
+   "seconds": 1.8,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "goodmorning": {
    "english": "good morning",
    "pos": "greeting",
-   "frames": 25,
-   "seconds": 1.67,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.96
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "goodnight": {
    "english": "good night",
    "pos": "greeting",
    "frames": 30,
    "seconds": 2.0,
-   "twoHanded": false,
-   "quality": 0.967
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "happy": {
    "english": "happy",
    "pos": "adjective",
-   "frames": 24,
-   "seconds": 1.6,
+   "frames": 25,
+   "seconds": 1.67,
    "twoHanded": false,
-   "quality": 0.979
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "have": {
    "english": "have",
    "pos": "verb",
-   "frames": 29,
-   "seconds": 1.93,
+   "frames": 30,
+   "seconds": 2.0,
    "twoHanded": true,
-   "quality": 0.931
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "he": {
    "english": "he",
    "pos": "pronoun",
-   "frames": 23,
-   "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.957
+   "frames": 21,
+   "seconds": 1.4,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "headache": {
    "english": "headache",
    "pos": "noun",
    "frames": 32,
    "seconds": 2.13,
-   "twoHanded": false,
-   "quality": 0.938
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "hearingaid": {
    "english": "hearing aid",
@@ -688,31 +774,35 @@
    "frames": 39,
    "seconds": 2.6,
    "twoHanded": true,
-   "quality": 0.937
+   "coverage": 1.0,
+   "quality": 0.99
   },
   "hello": {
    "english": "hello",
    "pos": "greeting",
    "frames": 23,
    "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.891
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "help": {
    "english": "help",
    "pos": "verb",
-   "frames": 19,
-   "seconds": 1.27,
-   "twoHanded": false,
-   "quality": 0.947
+   "frames": 21,
+   "seconds": 1.4,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "here": {
    "english": "here",
    "pos": "adverb",
-   "frames": 21,
-   "seconds": 1.4,
+   "frames": 22,
+   "seconds": 1.47,
    "twoHanded": true,
-   "quality": 0.976
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "home": {
    "english": "home",
@@ -720,7 +810,8 @@
    "frames": 28,
    "seconds": 1.87,
    "twoHanded": true,
-   "quality": 0.946
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "hospital": {
    "english": "hospital",
@@ -728,15 +819,17 @@
    "frames": 36,
    "seconds": 2.4,
    "twoHanded": false,
-   "quality": 0.875
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "hot": {
    "english": "hot",
    "pos": "adjective",
-   "frames": 30,
-   "seconds": 2.0,
+   "frames": 27,
+   "seconds": 1.8,
    "twoHanded": true,
-   "quality": 0.967
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "hour": {
    "english": "hour",
@@ -744,7 +837,8 @@
    "frames": 27,
    "seconds": 1.8,
    "twoHanded": true,
-   "quality": 0.963
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "how": {
    "english": "how",
@@ -752,15 +846,17 @@
    "frames": 75,
    "seconds": 5.0,
    "twoHanded": true,
-   "quality": 0.688
+   "coverage": 1.0,
+   "quality": 0.75
   },
   "howmany": {
    "english": "how many",
    "pos": "question",
-   "frames": 28,
-   "seconds": 1.87,
-   "twoHanded": false,
-   "quality": 0.929
+   "frames": 29,
+   "seconds": 1.93,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "howmuch": {
    "english": "how much",
@@ -768,71 +864,80 @@
    "frames": 75,
    "seconds": 5.0,
    "twoHanded": true,
-   "quality": 0.695
+   "coverage": 1.0,
+   "quality": 0.75
   },
   "hundred": {
    "english": "hundred",
    "pos": "number",
-   "frames": 24,
-   "seconds": 1.6,
-   "twoHanded": false,
-   "quality": 0.938
+   "frames": 28,
+   "seconds": 1.87,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "hungry": {
    "english": "hungry",
    "pos": "adjective",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 36,
+   "seconds": 2.4,
    "twoHanded": true,
-   "quality": 0.955
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "husband": {
    "english": "husband",
    "pos": "noun",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 23,
+   "seconds": 1.53,
    "twoHanded": true,
-   "quality": 0.977
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "i": {
    "english": "i",
    "pos": "pronoun",
-   "frames": 19,
-   "seconds": 1.27,
-   "twoHanded": false,
-   "quality": 0.974
+   "frames": 21,
+   "seconds": 1.4,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "important": {
    "english": "important",
    "pos": "adjective",
-   "frames": 26,
-   "seconds": 1.73,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.923
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "india": {
    "english": "india",
    "pos": "noun",
-   "frames": 33,
-   "seconds": 2.2,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.939
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "injection": {
    "english": "injection",
    "pos": "noun",
-   "frames": 25,
-   "seconds": 1.67,
-   "twoHanded": false,
+   "frames": 28,
+   "seconds": 1.87,
+   "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "interpreter": {
    "english": "interpreter",
    "pos": "noun",
-   "frames": 29,
-   "seconds": 1.93,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": true,
-   "quality": 0.931
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "key": {
    "english": "key",
@@ -840,23 +945,26 @@
    "frames": 26,
    "seconds": 1.73,
    "twoHanded": false,
-   "quality": 0.981
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "kitchen": {
    "english": "kitchen",
    "pos": "noun",
-   "frames": 49,
-   "seconds": 3.27,
+   "frames": 51,
+   "seconds": 3.4,
    "twoHanded": true,
-   "quality": 0.809
+   "coverage": 1.0,
+   "quality": 0.91
   },
   "know": {
    "english": "know",
    "pos": "verb",
    "frames": 23,
    "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.913
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "late": {
    "english": "late",
@@ -864,62 +972,70 @@
    "frames": 31,
    "seconds": 2.07,
    "twoHanded": true,
-   "quality": 0.968
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "learn": {
    "english": "learn",
    "pos": "verb",
-   "frames": 32,
-   "seconds": 2.13,
+   "frames": 31,
+   "seconds": 2.07,
    "twoHanded": false,
-   "quality": 0.984
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "less": {
    "english": "less",
    "pos": "quantifier",
-   "frames": 29,
-   "seconds": 1.93,
-   "twoHanded": false,
-   "quality": 0.931
+   "frames": 30,
+   "seconds": 2.0,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "like": {
    "english": "like",
    "pos": "verb",
-   "frames": 33,
-   "seconds": 2.2,
+   "frames": 36,
+   "seconds": 2.4,
    "twoHanded": true,
-   "quality": 0.985
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "listen": {
    "english": "listen",
    "pos": "verb",
-   "frames": 21,
-   "seconds": 1.4,
+   "frames": 24,
+   "seconds": 1.6,
    "twoHanded": false,
-   "quality": 0.952
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "live": {
    "english": "live",
    "pos": "verb",
-   "frames": 29,
-   "seconds": 1.93,
-   "twoHanded": true,
+   "frames": 25,
+   "seconds": 1.67,
+   "twoHanded": false,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "lose": {
    "english": "lose",
    "pos": "verb",
-   "frames": 24,
-   "seconds": 1.6,
-   "twoHanded": false,
-   "quality": 0.958
+   "frames": 25,
+   "seconds": 1.67,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "love": {
    "english": "love",
    "pos": "verb",
-   "frames": 20,
-   "seconds": 1.33,
+   "frames": 22,
+   "seconds": 1.47,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "man": {
@@ -928,47 +1044,53 @@
    "frames": 28,
    "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.964
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "many": {
    "english": "many",
    "pos": "quantifier",
-   "frames": 17,
-   "seconds": 1.13,
+   "frames": 18,
+   "seconds": 1.2,
    "twoHanded": true,
-   "quality": 0.941
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "market": {
    "english": "market",
    "pos": "noun",
-   "frames": 34,
-   "seconds": 2.27,
+   "frames": 35,
+   "seconds": 2.33,
    "twoHanded": true,
-   "quality": 0.941
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "maybe": {
    "english": "maybe",
    "pos": "response",
-   "frames": 27,
-   "seconds": 1.8,
+   "frames": 29,
+   "seconds": 1.93,
    "twoHanded": true,
-   "quality": 0.963
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "medicine": {
    "english": "medicine",
    "pos": "noun",
-   "frames": 26,
-   "seconds": 1.73,
+   "frames": 35,
+   "seconds": 2.33,
    "twoHanded": true,
-   "quality": 0.942
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "meet": {
    "english": "meet",
    "pos": "verb",
-   "frames": 31,
-   "seconds": 2.07,
+   "frames": 33,
+   "seconds": 2.2,
    "twoHanded": true,
-   "quality": 0.935
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "milk": {
    "english": "milk",
@@ -976,7 +1098,8 @@
    "frames": 33,
    "seconds": 2.2,
    "twoHanded": true,
-   "quality": 0.939
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "money": {
    "english": "money",
@@ -984,55 +1107,62 @@
    "frames": 75,
    "seconds": 5.0,
    "twoHanded": true,
-   "quality": 0.706
+   "coverage": 1.0,
+   "quality": 0.75
   },
   "month": {
    "english": "month",
    "pos": "time",
-   "frames": 29,
-   "seconds": 1.93,
+   "frames": 33,
+   "seconds": 2.2,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "more": {
    "english": "more",
    "pos": "quantifier",
-   "frames": 32,
-   "seconds": 2.13,
-   "twoHanded": false,
-   "quality": 0.969
+   "frames": 33,
+   "seconds": 2.2,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "morning": {
    "english": "morning",
    "pos": "time",
-   "frames": 25,
-   "seconds": 1.67,
-   "twoHanded": false,
-   "quality": 0.8
+   "frames": 27,
+   "seconds": 1.8,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "mother": {
    "english": "mother",
    "pos": "noun",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 26,
+   "seconds": 1.73,
    "twoHanded": false,
-   "quality": 0.909
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "name": {
    "english": "name",
    "pos": "noun",
-   "frames": 29,
-   "seconds": 1.93,
+   "frames": 24,
+   "seconds": 1.6,
    "twoHanded": true,
-   "quality": 0.948
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "never": {
    "english": "never",
    "pos": "adverb",
-   "frames": 17,
-   "seconds": 1.13,
+   "frames": 30,
+   "seconds": 2.0,
    "twoHanded": false,
-   "quality": 0.941
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "new": {
    "english": "new",
@@ -1040,31 +1170,35 @@
    "frames": 32,
    "seconds": 2.13,
    "twoHanded": false,
-   "quality": 0.938
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "night": {
    "english": "night",
    "pos": "time",
-   "frames": 20,
-   "seconds": 1.33,
-   "twoHanded": false,
-   "quality": 0.875
+   "frames": 30,
+   "seconds": 2.0,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "nine": {
    "english": "nine",
    "pos": "number",
-   "frames": 29,
-   "seconds": 1.93,
-   "twoHanded": false,
-   "quality": 0.966
+   "frames": 30,
+   "seconds": 2.0,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "no": {
    "english": "no",
    "pos": "response",
-   "frames": 26,
-   "seconds": 1.73,
-   "twoHanded": false,
-   "quality": 0.962
+   "frames": 30,
+   "seconds": 2.0,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "now": {
    "english": "now",
@@ -1072,23 +1206,26 @@
    "frames": 39,
    "seconds": 2.6,
    "twoHanded": false,
-   "quality": 0.834
+   "coverage": 0.744,
+   "quality": 0.882
   },
   "nurse": {
    "english": "nurse",
    "pos": "noun",
-   "frames": 40,
-   "seconds": 2.67,
+   "frames": 41,
+   "seconds": 2.73,
    "twoHanded": true,
-   "quality": 0.981
+   "coverage": 1.0,
+   "quality": 0.977
   },
   "office": {
    "english": "office",
    "pos": "noun",
-   "frames": 20,
-   "seconds": 1.33,
+   "frames": 22,
+   "seconds": 1.47,
    "twoHanded": false,
-   "quality": 0.9
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "ok": {
    "english": "ok",
@@ -1096,126 +1233,142 @@
    "frames": 34,
    "seconds": 2.27,
    "twoHanded": true,
-   "quality": 0.941
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "old": {
    "english": "old",
    "pos": "adjective",
-   "frames": 30,
-   "seconds": 2.0,
-   "twoHanded": false,
-   "quality": 0.933
+   "frames": 35,
+   "seconds": 2.33,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "one": {
    "english": "one",
    "pos": "number",
    "frames": 32,
    "seconds": 2.13,
-   "twoHanded": false,
-   "quality": 0.828
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "open": {
    "english": "open",
    "pos": "verb",
-   "frames": 24,
-   "seconds": 1.6,
+   "frames": 25,
+   "seconds": 1.67,
    "twoHanded": true,
-   "quality": 0.979
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "operation": {
    "english": "operation",
    "pos": "noun",
-   "frames": 28,
-   "seconds": 1.87,
-   "twoHanded": false,
-   "quality": 0.929
+   "frames": 29,
+   "seconds": 1.93,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "pain": {
    "english": "pain",
    "pos": "noun",
    "frames": 26,
    "seconds": 1.73,
-   "twoHanded": false,
-   "quality": 0.981
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "pay": {
    "english": "pay",
    "pos": "verb",
-   "frames": 22,
-   "seconds": 1.47,
-   "twoHanded": false,
-   "quality": 0.886
+   "frames": 23,
+   "seconds": 1.53,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "people": {
    "english": "people",
    "pos": "noun",
-   "frames": 12,
-   "seconds": 0.8,
-   "twoHanded": false,
-   "quality": 0.833
+   "frames": 13,
+   "seconds": 0.87,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "phone": {
    "english": "phone",
    "pos": "noun",
-   "frames": 24,
-   "seconds": 1.6,
+   "frames": 25,
+   "seconds": 1.67,
    "twoHanded": false,
-   "quality": 0.979
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "play": {
    "english": "play",
    "pos": "verb",
-   "frames": 34,
-   "seconds": 2.27,
+   "frames": 35,
+   "seconds": 2.33,
    "twoHanded": true,
-   "quality": 0.956
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "please": {
    "english": "please",
    "pos": "response",
-   "frames": 26,
-   "seconds": 1.73,
+   "frames": 27,
+   "seconds": 1.8,
    "twoHanded": false,
-   "quality": 0.942
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "pleased": {
    "english": "pleased",
    "pos": "greeting",
-   "frames": 26,
-   "seconds": 1.73,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.981
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "police": {
    "english": "police",
    "pos": "noun",
    "frames": 30,
    "seconds": 2.0,
-   "twoHanded": false,
-   "quality": 0.867
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "price": {
    "english": "price",
    "pos": "noun",
-   "frames": 30,
-   "seconds": 2.0,
-   "twoHanded": false,
-   "quality": 0.983
+   "frames": 31,
+   "seconds": 2.07,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "read": {
    "english": "read",
    "pos": "verb",
-   "frames": 25,
-   "seconds": 1.67,
+   "frames": 27,
+   "seconds": 1.8,
    "twoHanded": true,
-   "quality": 0.96
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "ready": {
    "english": "ready",
    "pos": "adjective",
-   "frames": 25,
-   "seconds": 1.67,
+   "frames": 27,
+   "seconds": 1.8,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "remember": {
@@ -1223,48 +1376,54 @@
    "pos": "verb",
    "frames": 27,
    "seconds": 1.8,
-   "twoHanded": false,
-   "quality": 0.926
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "restaurant": {
    "english": "restaurant",
    "pos": "noun",
-   "frames": 49,
-   "seconds": 3.27,
-   "twoHanded": false,
-   "quality": 0.809
+   "frames": 51,
+   "seconds": 3.4,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 0.91
   },
   "rice": {
    "english": "rice",
    "pos": "noun",
    "frames": 45,
    "seconds": 3.0,
-   "twoHanded": false,
-   "quality": 0.764
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 0.95
   },
   "road": {
    "english": "road",
    "pos": "noun",
-   "frames": 30,
-   "seconds": 2.0,
+   "frames": 33,
+   "seconds": 2.2,
    "twoHanded": true,
-   "quality": 0.933
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "room": {
    "english": "room",
    "pos": "noun",
-   "frames": 43,
-   "seconds": 2.87,
-   "twoHanded": false,
-   "quality": 0.864
+   "frames": 44,
+   "seconds": 2.93,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 0.957
   },
   "sad": {
    "english": "sad",
    "pos": "adjective",
-   "frames": 34,
-   "seconds": 2.27,
-   "twoHanded": false,
-   "quality": 0.956
+   "frames": 25,
+   "seconds": 1.67,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "salt": {
    "english": "salt",
@@ -1272,31 +1431,35 @@
    "frames": 30,
    "seconds": 2.0,
    "twoHanded": false,
-   "quality": 0.933
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "same": {
    "english": "same",
    "pos": "adjective",
-   "frames": 27,
-   "seconds": 1.8,
-   "twoHanded": false,
-   "quality": 0.944
+   "frames": 30,
+   "seconds": 2.0,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "school": {
    "english": "school",
    "pos": "noun",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 24,
+   "seconds": 1.6,
    "twoHanded": true,
-   "quality": 0.955
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "see": {
    "english": "see",
    "pos": "verb",
-   "frames": 34,
-   "seconds": 2.27,
-   "twoHanded": false,
-   "quality": 0.941
+   "frames": 25,
+   "seconds": 1.67,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "sell": {
    "english": "sell",
@@ -1304,39 +1467,44 @@
    "frames": 32,
    "seconds": 2.13,
    "twoHanded": true,
-   "quality": 0.891
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "send": {
    "english": "send",
    "pos": "verb",
-   "frames": 23,
-   "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.957
+   "frames": 25,
+   "seconds": 1.67,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "seven": {
    "english": "seven",
    "pos": "number",
-   "frames": 26,
-   "seconds": 1.73,
-   "twoHanded": false,
-   "quality": 0.962
+   "frames": 27,
+   "seconds": 1.8,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "she": {
    "english": "she",
    "pos": "pronoun",
-   "frames": 23,
-   "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.978
+   "frames": 22,
+   "seconds": 1.47,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "shop": {
    "english": "shop",
    "pos": "noun",
-   "frames": 27,
-   "seconds": 1.8,
+   "frames": 29,
+   "seconds": 1.93,
    "twoHanded": true,
-   "quality": 0.963
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "show": {
    "english": "show",
@@ -1344,23 +1512,26 @@
    "frames": 25,
    "seconds": 1.67,
    "twoHanded": true,
-   "quality": 0.96
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "sick": {
    "english": "sick",
    "pos": "adjective",
    "frames": 28,
    "seconds": 1.87,
-   "twoHanded": false,
-   "quality": 0.857
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "signlanguage": {
    "english": "sign language",
    "pos": "noun",
-   "frames": 27,
-   "seconds": 1.8,
+   "frames": 29,
+   "seconds": 1.93,
    "twoHanded": true,
-   "quality": 0.963
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "sister": {
    "english": "sister",
@@ -1368,7 +1539,8 @@
    "frames": 28,
    "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.964
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "sit": {
    "english": "sit",
@@ -1376,47 +1548,53 @@
    "frames": 24,
    "seconds": 1.6,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "six": {
    "english": "six",
    "pos": "number",
-   "frames": 26,
-   "seconds": 1.73,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.904
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "sleep": {
    "english": "sleep",
    "pos": "verb",
-   "frames": 27,
-   "seconds": 1.8,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.981
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "slow": {
    "english": "slow",
    "pos": "adjective",
-   "frames": 37,
-   "seconds": 2.47,
-   "twoHanded": false,
-   "quality": 0.959
+   "frames": 39,
+   "seconds": 2.6,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 0.99
   },
   "small": {
    "english": "small",
    "pos": "adjective",
-   "frames": 22,
-   "seconds": 1.47,
-   "twoHanded": true,
-   "quality": 0.977
+   "frames": 31,
+   "seconds": 2.07,
+   "twoHanded": false,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "some": {
    "english": "some",
    "pos": "quantifier",
-   "frames": 29,
-   "seconds": 1.93,
-   "twoHanded": false,
-   "quality": 0.931
+   "frames": 28,
+   "seconds": 1.87,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "sometimes": {
    "english": "sometimes",
@@ -1424,46 +1602,52 @@
    "frames": 29,
    "seconds": 1.93,
    "twoHanded": true,
-   "quality": 0.966
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "son": {
    "english": "son",
    "pos": "noun",
-   "frames": 27,
-   "seconds": 1.8,
+   "frames": 29,
+   "seconds": 1.93,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "sorry": {
    "english": "sorry",
    "pos": "response",
-   "frames": 26,
-   "seconds": 1.73,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "speak": {
    "english": "speak",
    "pos": "verb",
-   "frames": 23,
-   "seconds": 1.53,
-   "twoHanded": true,
-   "quality": 0.978
+   "frames": 34,
+   "seconds": 2.27,
+   "twoHanded": false,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "stand": {
    "english": "stand",
    "pos": "verb",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 24,
+   "seconds": 1.6,
    "twoHanded": true,
-   "quality": 0.955
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "start": {
    "english": "start",
    "pos": "verb",
-   "frames": 18,
-   "seconds": 1.2,
-   "twoHanded": false,
+   "frames": 20,
+   "seconds": 1.33,
+   "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "station": {
@@ -1472,38 +1656,43 @@
    "frames": 75,
    "seconds": 5.0,
    "twoHanded": true,
-   "quality": 0.702
+   "coverage": 1.0,
+   "quality": 0.75
   },
   "stomach": {
    "english": "stomach",
    "pos": "noun",
-   "frames": 17,
-   "seconds": 1.13,
+   "frames": 18,
+   "seconds": 1.2,
    "twoHanded": false,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "stop": {
    "english": "stop",
    "pos": "verb",
-   "frames": 41,
-   "seconds": 2.73,
+   "frames": 26,
+   "seconds": 1.73,
    "twoHanded": true,
-   "quality": 0.961
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "student": {
    "english": "student",
    "pos": "noun",
-   "frames": 23,
-   "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.913
+   "frames": 24,
+   "seconds": 1.6,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "study": {
    "english": "study",
    "pos": "verb",
-   "frames": 23,
-   "seconds": 1.53,
+   "frames": 26,
+   "seconds": 1.73,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "sugar": {
@@ -1511,47 +1700,53 @@
    "pos": "noun",
    "frames": 26,
    "seconds": 1.73,
-   "twoHanded": false,
-   "quality": 0.962
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "tablet": {
    "english": "tablet",
    "pos": "noun",
    "frames": 59,
    "seconds": 3.93,
-   "twoHanded": false,
-   "quality": 0.799
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 0.857
   },
   "take": {
    "english": "take",
    "pos": "verb",
-   "frames": 22,
-   "seconds": 1.47,
-   "twoHanded": false,
-   "quality": 0.955
+   "frames": 23,
+   "seconds": 1.53,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "tea": {
    "english": "tea",
    "pos": "noun",
-   "frames": 21,
-   "seconds": 1.4,
+   "frames": 25,
+   "seconds": 1.67,
    "twoHanded": false,
-   "quality": 0.905
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "teach": {
    "english": "teach",
    "pos": "verb",
-   "frames": 21,
-   "seconds": 1.4,
+   "frames": 24,
+   "seconds": 1.6,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "teacher": {
    "english": "teacher",
    "pos": "noun",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 23,
+   "seconds": 1.53,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "ten": {
@@ -1560,55 +1755,62 @@
    "frames": 26,
    "seconds": 1.73,
    "twoHanded": false,
-   "quality": 0.904
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "thankyou": {
    "english": "thank you",
    "pos": "response",
-   "frames": 22,
-   "seconds": 1.47,
-   "twoHanded": false,
-   "quality": 0.955
+   "frames": 28,
+   "seconds": 1.87,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "that": {
    "english": "that",
    "pos": "pronoun",
    "frames": 50,
    "seconds": 3.33,
-   "twoHanded": false,
-   "quality": 0.783
+   "twoHanded": true,
+   "coverage": 0.8,
+   "quality": 0.833
   },
   "there": {
    "english": "there",
    "pos": "adverb",
-   "frames": 20,
-   "seconds": 1.33,
-   "twoHanded": false,
-   "quality": 0.925
+   "frames": 21,
+   "seconds": 1.4,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "they": {
    "english": "they",
    "pos": "pronoun",
-   "frames": 32,
-   "seconds": 2.13,
-   "twoHanded": false,
-   "quality": 0.859
+   "frames": 34,
+   "seconds": 2.27,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "think": {
    "english": "think",
    "pos": "verb",
-   "frames": 22,
-   "seconds": 1.47,
+   "frames": 27,
+   "seconds": 1.8,
    "twoHanded": false,
-   "quality": 0.932
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "thirsty": {
    "english": "thirsty",
    "pos": "adjective",
-   "frames": 29,
-   "seconds": 1.93,
-   "twoHanded": false,
-   "quality": 0.966
+   "frames": 32,
+   "seconds": 2.13,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "thirty": {
    "english": "thirty",
@@ -1616,151 +1818,170 @@
    "frames": 32,
    "seconds": 2.13,
    "twoHanded": false,
-   "quality": 0.969
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "this": {
    "english": "this",
    "pos": "pronoun",
-   "frames": 20,
-   "seconds": 1.33,
-   "twoHanded": false,
-   "quality": 0.925
+   "frames": 23,
+   "seconds": 1.53,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "thousand": {
    "english": "thousand",
    "pos": "number",
-   "frames": 20,
-   "seconds": 1.33,
+   "frames": 22,
+   "seconds": 1.47,
    "twoHanded": false,
-   "quality": 0.925
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "three": {
    "english": "three",
    "pos": "number",
    "frames": 26,
    "seconds": 1.73,
-   "twoHanded": false,
-   "quality": 0.923
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "ticket": {
    "english": "ticket",
    "pos": "noun",
-   "frames": 37,
-   "seconds": 2.47,
-   "twoHanded": false,
-   "quality": 0.932
+   "frames": 38,
+   "seconds": 2.53,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 0.997
   },
   "time": {
    "english": "time",
    "pos": "time",
-   "frames": 23,
-   "seconds": 1.53,
+   "frames": 27,
+   "seconds": 1.8,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "tired": {
    "english": "tired",
    "pos": "adjective",
-   "frames": 18,
-   "seconds": 1.2,
+   "frames": 20,
+   "seconds": 1.33,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "today": {
    "english": "today",
    "pos": "time",
-   "frames": 22,
-   "seconds": 1.47,
-   "twoHanded": false,
-   "quality": 0.955
+   "frames": 23,
+   "seconds": 1.53,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "toilet": {
    "english": "toilet",
    "pos": "noun",
-   "frames": 31,
-   "seconds": 2.07,
-   "twoHanded": false,
-   "quality": 0.935
+   "frames": 32,
+   "seconds": 2.13,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "train": {
    "english": "train",
    "pos": "noun",
    "frames": 26,
    "seconds": 1.73,
-   "twoHanded": false,
-   "quality": 0.942
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "twenty": {
    "english": "twenty",
    "pos": "number",
-   "frames": 23,
-   "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.913
+   "frames": 25,
+   "seconds": 1.67,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "two": {
    "english": "two",
    "pos": "number",
-   "frames": 19,
-   "seconds": 1.27,
+   "frames": 21,
+   "seconds": 1.4,
    "twoHanded": false,
-   "quality": 0.895
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "understand": {
    "english": "understand",
    "pos": "verb",
-   "frames": 30,
-   "seconds": 2.0,
-   "twoHanded": false,
-   "quality": 0.933
+   "frames": 21,
+   "seconds": 1.4,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "vegetable": {
    "english": "vegetable",
    "pos": "noun",
-   "frames": 30,
-   "seconds": 2.0,
+   "frames": 32,
+   "seconds": 2.13,
    "twoHanded": true,
-   "quality": 0.967
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "village": {
    "english": "village",
    "pos": "noun",
-   "frames": 28,
-   "seconds": 1.87,
+   "frames": 30,
+   "seconds": 2.0,
    "twoHanded": true,
-   "quality": 0.982
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "wait": {
    "english": "wait",
    "pos": "verb",
-   "frames": 23,
-   "seconds": 1.53,
+   "frames": 25,
+   "seconds": 1.67,
    "twoHanded": false,
-   "quality": 0.957
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "wakeup": {
    "english": "wake up",
    "pos": "verb",
-   "frames": 31,
-   "seconds": 2.07,
+   "frames": 33,
+   "seconds": 2.2,
    "twoHanded": true,
-   "quality": 0.968
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "walk": {
    "english": "walk",
    "pos": "verb",
-   "frames": 31,
-   "seconds": 2.07,
+   "frames": 33,
+   "seconds": 2.2,
    "twoHanded": true,
-   "quality": 0.984
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "want": {
    "english": "want",
    "pos": "verb",
    "frames": 23,
    "seconds": 1.53,
-   "twoHanded": false,
-   "quality": 0.826
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "wash": {
    "english": "wash",
@@ -1768,46 +1989,52 @@
    "frames": 75,
    "seconds": 5.0,
    "twoHanded": false,
-   "quality": 0.695
+   "coverage": 1.0,
+   "quality": 0.75
   },
   "water": {
    "english": "water",
    "pos": "noun",
-   "frames": 20,
-   "seconds": 1.33,
+   "frames": 22,
+   "seconds": 1.47,
    "twoHanded": false,
-   "quality": 0.95
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "we": {
    "english": "we",
    "pos": "pronoun",
    "frames": 19,
    "seconds": 1.27,
-   "twoHanded": false,
-   "quality": 0.895
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "wear": {
    "english": "wear",
    "pos": "verb",
-   "frames": 17,
-   "seconds": 1.13,
-   "twoHanded": false,
-   "quality": 0.941
+   "frames": 19,
+   "seconds": 1.27,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "week": {
    "english": "week",
    "pos": "time",
-   "frames": 28,
-   "seconds": 1.87,
+   "frames": 19,
+   "seconds": 1.27,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "welcome": {
    "english": "welcome",
    "pos": "greeting",
-   "frames": 23,
-   "seconds": 1.53,
+   "frames": 27,
+   "seconds": 1.8,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "what": {
@@ -1815,71 +2042,80 @@
    "pos": "question",
    "frames": 18,
    "seconds": 1.2,
-   "twoHanded": false,
-   "quality": 0.889
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "when": {
    "english": "when",
    "pos": "question",
-   "frames": 29,
-   "seconds": 1.93,
+   "frames": 30,
+   "seconds": 2.0,
    "twoHanded": false,
-   "quality": 0.931
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "where": {
    "english": "where",
    "pos": "question",
-   "frames": 20,
-   "seconds": 1.33,
+   "frames": 23,
+   "seconds": 1.53,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "which": {
    "english": "which",
    "pos": "question",
-   "frames": 26,
-   "seconds": 1.73,
+   "frames": 28,
+   "seconds": 1.87,
    "twoHanded": false,
-   "quality": 0.962
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "who": {
    "english": "who",
    "pos": "question",
-   "frames": 27,
-   "seconds": 1.8,
-   "twoHanded": false,
-   "quality": 0.889
+   "frames": 28,
+   "seconds": 1.87,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "why": {
    "english": "why",
    "pos": "question",
-   "frames": 22,
-   "seconds": 1.47,
-   "twoHanded": false,
-   "quality": 0.955
+   "frames": 20,
+   "seconds": 1.33,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "woman": {
    "english": "woman",
    "pos": "noun",
-   "frames": 23,
-   "seconds": 1.53,
+   "frames": 24,
+   "seconds": 1.6,
    "twoHanded": false,
-   "quality": 0.978
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "work": {
    "english": "work",
    "pos": "verb",
-   "frames": 28,
-   "seconds": 1.87,
+   "frames": 20,
+   "seconds": 1.33,
    "twoHanded": true,
-   "quality": 0.982
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "write": {
    "english": "write",
    "pos": "verb",
-   "frames": 33,
-   "seconds": 2.2,
+   "frames": 35,
+   "seconds": 2.33,
    "twoHanded": true,
+   "coverage": 1.0,
    "quality": 1.0
   },
   "year": {
@@ -1888,31 +2124,35 @@
    "frames": 25,
    "seconds": 1.67,
    "twoHanded": true,
-   "quality": 0.92
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "yes": {
    "english": "yes",
    "pos": "response",
-   "frames": 24,
-   "seconds": 1.6,
+   "frames": 25,
+   "seconds": 1.67,
    "twoHanded": false,
-   "quality": 0.979
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "yesterday": {
    "english": "yesterday",
    "pos": "time",
-   "frames": 20,
-   "seconds": 1.33,
+   "frames": 23,
+   "seconds": 1.53,
    "twoHanded": false,
-   "quality": 0.9
+   "coverage": 1.0,
+   "quality": 1.0
   },
   "you": {
    "english": "you",
    "pos": "pronoun",
-   "frames": 21,
-   "seconds": 1.4,
-   "twoHanded": false,
-   "quality": 0.952
+   "frames": 22,
+   "seconds": 1.47,
+   "twoHanded": true,
+   "coverage": 1.0,
+   "quality": 1.0
   }
  }
 }

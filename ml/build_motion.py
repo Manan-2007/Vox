@@ -27,13 +27,41 @@ orientation come from the world landmarks, and the whole hand is then placed in
 signing space using the image-space wrist and the shoulder anchor. That is what
 makes the avatar read as a hand in a body rather than a constellation of dots.
 
-Frame layout, 140 floats:
+--------------------------------------------------------------------------
+FORMAT 2 — WHAT CHANGED AND WHY
+--------------------------------------------------------------------------
+Format 1 stored five pose points as (x, y) only: nose, both shoulders, both
+elbows. Three separate failures all traced back to that.
 
-    [  0 :  2 ]  left  wrist, image space (x, y) — 0,0 means the hand is absent
-    [  2 : 65 ]  left  hand, 21 world landmarks (x, y, z) in metres
-    [ 65 : 67 ]  right wrist, image space
-    [ 67 :130 ]  right hand, 21 world landmarks
-    [130 :140 ]  pose, image space (x, y) for nose, L/R shoulder, L/R elbow
+  * NO DEPTH. Every body joint sat on z = 0 while the hands carried real metric
+    depth, so the arms were a flat cut-out with solid hands stuck on the end.
+    Worse, the torso is a solid that extends forward of that plane, so arms drawn
+    at z = 0 ran *through the chest*. Pose z is a weak estimate, but it is enough
+    to say which side of the shoulder plane a joint is on, and combined with a
+    fixed bone length that is all the solver needs.
+
+  * NO WRISTS. When the hand landmarker lost a hand — about one frame in ten
+    across this library — the arm had nothing to end at and the forearm was
+    simply not drawn, leaving a floating upper arm. The pose model tracks wrists
+    even when the hand model has given up, so the arm always terminates
+    somewhere real.
+
+  * NO HIPS, NO EARS. The torso could not be anchored at its bottom end and the
+    head could not be oriented, so both were guessed from the shoulder line and
+    the figure had a head that pointed wherever the nose happened to be.
+
+Frame layout, 169 floats:
+
+    [  0:  2]  left  wrist, image space (x, y) — 0,0 means the hand is absent
+    [  2: 65]  left  hand, 21 world landmarks (x, y, z) in metres
+    [ 65: 67]  right wrist, image space
+    [ 67:130]  right hand, 21 world landmarks
+    [130:169]  pose, image space (x, y, z) for 13 points — see POSE_INDICES
+
+Image-space x and z are multiplied by the clip's aspect ratio so all three axes
+share one unit (see clip_motion). A pose point whose visibility is below
+POSE_VISIBILITY is written as zeros, which is the same "absent" convention the
+hand blocks use.
 """
 
 from __future__ import annotations
@@ -65,19 +93,59 @@ CONFIDENCE = 0.3
 PAD_FRAMES = 2
 #: A sign longer than this is almost certainly a phrase or an example sentence.
 MAX_FRAMES = 75
-POSE_INDICES = (0, 11, 12, 13, 14)
 
-FRAME_FLOATS = 140
+#: The full PoseLandmarker bundle, used here and only here. The browser runs the
+#: lite bundle because it has to keep 30 FPS on a laptop; this build runs once,
+#: offline, and every extra millisecond buys a better skeleton in every sign.
+FULL_POSE_MODEL_PATH = ML_DIR / "models" / "pose_landmarker_full.task"
+
+#: MediaPipe pose landmarks kept, in this order. Read by the frontend as
+#: POSE_* constants in frontend/src/avatar/signMotion.ts — the two lists are one
+#: contract and must not drift.
+POSE_INDICES = (
+    0,    # nose
+    11,   # left shoulder
+    12,   # right shoulder
+    13,   # left elbow
+    14,   # right elbow
+    15,   # left wrist
+    16,   # right wrist
+    23,   # left hip
+    24,   # right hip
+    7,    # left ear
+    8,    # right ear
+    2,    # left eye
+    5,    # right eye
+)
+POSE_POINTS = len(POSE_INDICES)
+
+#: Below this, MediaPipe is guessing where an occluded or out-of-frame joint
+#: would be. Those guesses are confident-looking and wrong, and a rig that
+#: believes them contorts. Anything under the bar is written as absent instead.
+POSE_VISIBILITY = 0.5
+
+FORMAT = 2
+FRAME_FLOATS = 130 + POSE_POINTS * 3  # 169
 LEFT_WRIST, LEFT_WORLD = 0, 2
 RIGHT_WRIST, RIGHT_WORLD = 65, 67
 POSE_BLOCK = 130
 
+# Slot numbers within the pose block, for the trimming and scoring code below.
+P_NOSE, P_L_SHOULDER, P_R_SHOULDER = 0, 1, 2
+P_L_ELBOW, P_R_ELBOW, P_L_WRIST, P_R_WRIST = 3, 4, 5, 6
+
+
+def pose_xy(frames: np.ndarray, slot: int) -> np.ndarray:
+    """The (x, y) columns of one pose slot, for every frame."""
+    base = POSE_BLOCK + slot * 3
+    return frames[:, base : base + 2]
+
 
 def clip_motion(path: Path, hands, pose) -> np.ndarray:
-    """Run both landmarkers over a clip at ~15 fps. Returns (T, 140).
+    """Run both landmarkers over a clip at ~15 fps. Returns (T, 169).
 
-    Image-space x is multiplied by the frame's aspect ratio before being stored,
-    which turns MediaPipe's normalized coordinates into SQUARE ones.
+    Image-space x and z are multiplied by the frame's aspect ratio before being
+    stored, which turns MediaPipe's normalized coordinates into SQUARE ones.
 
     This matters more than it sounds. MediaPipe divides x by the frame width and
     y by the frame height, so in a 16:9 clip one unit of x is 1.78x as many
@@ -86,7 +154,8 @@ def clip_motion(path: Path, hands, pose) -> np.ndarray:
     wrong in a direction that stretches the whole figure vertically: measured
     that way the nose sat 1.2 shoulder widths above the shoulders instead of the
     0.67 a real body has, and the avatar's head floated a head's height clear of
-    its neck. Correcting x once, here, makes every downstream ratio true.
+    its neck. Correcting x once, here, makes every downstream ratio true. Pose z
+    is documented as sharing x's scale, so it takes the same correction.
     """
     cap = cv2.VideoCapture(str(path))
     if not cap.isOpened():
@@ -126,9 +195,20 @@ def _row(hand_result, pose_result, aspect: float) -> np.ndarray:
     if pose_result and pose_result.pose_landmarks:
         landmarks = pose_result.pose_landmarks[0]
         for slot, index in enumerate(POSE_INDICES):
-            if index < len(landmarks):
-                out[POSE_BLOCK + slot * 2] = landmarks[index].x * aspect
-                out[POSE_BLOCK + slot * 2 + 1] = landmarks[index].y
+            if index >= len(landmarks):
+                continue
+            point = landmarks[index]
+            # `visibility` is MediaPipe's own confidence that the joint is
+            # actually in shot. Below the bar it is an extrapolation, and an
+            # extrapolated elbow is what makes an avatar flail.
+            if getattr(point, "visibility", 1.0) < POSE_VISIBILITY:
+                continue
+            base = POSE_BLOCK + slot * 3
+            # A coordinate at exactly 0 would read as "absent"; nudge it. This
+            # is a sub-pixel move at the very edge of frame.
+            out[base] = (point.x * aspect) or 1e-5
+            out[base + 1] = point.y or 1e-5
+            out[base + 2] = point.z * aspect
 
     if not hand_result or not hand_result.hand_landmarks:
         return out
@@ -151,8 +231,6 @@ def _row(hand_result, pose_result, aspect: float) -> np.ndarray:
         i = best[label][1]
         image = hand_result.hand_landmarks[i]
         world = hand_result.hand_world_landmarks[i]
-        # A wrist at exactly (0, 0) would read as "absent"; nudge it. This is a
-        # sub-pixel move at the very edge of frame and never happens in practice.
         out[wrist_slot] = (image[0].x * aspect) or 1e-5
         out[wrist_slot + 1] = image[0].y or 1e-5
         for j, point in enumerate(world[:21]):
@@ -191,10 +269,12 @@ def in_signing_space(frames: np.ndarray) -> np.ndarray:
     of the stage.
 
     So the test is positional: is a wrist above the resting line, measured in
-    shoulder widths so it holds however far the signer is from the camera.
+    shoulder widths so it holds however far the signer is from the camera. Both
+    the hand landmarker's wrist and the pose model's are consulted, because a
+    raised hand the hand model missed is still a raised hand.
     """
-    left_shoulder = frames[:, POSE_BLOCK + 2 : POSE_BLOCK + 4]
-    right_shoulder = frames[:, POSE_BLOCK + 4 : POSE_BLOCK + 6]
+    left_shoulder = pose_xy(frames, P_L_SHOULDER)
+    right_shoulder = pose_xy(frames, P_R_SHOULDER)
     width = np.hypot(
         left_shoulder[:, 0] - right_shoulder[:, 0],
         left_shoulder[:, 1] - right_shoulder[:, 1],
@@ -204,9 +284,15 @@ def in_signing_space(frames: np.ndarray) -> np.ndarray:
     limit = mid_y + RESTING_DEPTH * width
 
     raised = np.zeros(len(frames), bool)
-    for wrist_slot in (LEFT_WRIST, RIGHT_WRIST):
-        present = (frames[:, wrist_slot] != 0) | (frames[:, wrist_slot + 1] != 0)
-        raised |= present & (width > 1e-6) & (frames[:, wrist_slot + 1] < limit)
+    candidates = [
+        (frames[:, LEFT_WRIST], frames[:, LEFT_WRIST + 1]),
+        (frames[:, RIGHT_WRIST], frames[:, RIGHT_WRIST + 1]),
+        (pose_xy(frames, P_L_WRIST)[:, 0], pose_xy(frames, P_L_WRIST)[:, 1]),
+        (pose_xy(frames, P_R_WRIST)[:, 0], pose_xy(frames, P_R_WRIST)[:, 1]),
+    ]
+    for x, y in candidates:
+        present = (x != 0) | (y != 0)
+        raised |= present & (width > 1e-6) & (y < limit)
     return raised
 
 
@@ -225,32 +311,95 @@ def trim(frames: np.ndarray) -> np.ndarray:
     return frames[start:end]
 
 
-def fill_gaps(frames: np.ndarray) -> np.ndarray:
-    """Interpolate across single-frame hand dropouts.
+#: Hand dropouts up to this many frames long are filled. Beyond it the hand
+#: really was out of view and inventing motion would be a lie.
+#:
+#: Format 1 filled gaps of 2. That was chosen when a missing hand meant a
+#: missing hand; it now also means a missing *forearm*, because the arm chain
+#: terminates at the wrist. Half a second of one-armed signing is far more
+#: destructive to legibility than half a second of very slightly stale finger
+#: shape, so the limit is the length of a real occlusion rather than of a blink.
+MAX_FILL_FRAMES = 6
 
-    A hand missed for one or two frames mid-sign leaves a hole that the avatar
-    would render as the hand blinking out of existence. Interpolating between the
-    surrounding frames is both truer to what happened and far less distracting.
-    A longer gap is left alone: the hand really was out of view, and inventing
-    half a second of motion would be a lie.
+
+def fill_gaps(frames: np.ndarray) -> np.ndarray:
+    """Interpolate across hand dropouts, and edge-hold the ends.
+
+    A hand missed mid-sign leaves a hole the avatar renders as the hand — and
+    the forearm attached to it — blinking out of existence. Interpolating
+    between the surrounding frames is both truer to what happened and far less
+    distracting.
+
+    Gaps at the very start or end have nothing on one side to interpolate from,
+    so the nearest known hand is held. That is what the signer's hand was
+    actually doing while the tracker had not caught up, and it stops every sign
+    in the library from opening on a body with no hands.
     """
     out = frames.copy()
     for wrist_slot, world_slot in ((LEFT_WRIST, LEFT_WORLD), (RIGHT_WRIST, RIGHT_WORLD)):
         present = (out[:, wrist_slot] != 0) | (out[:, wrist_slot + 1] != 0)
+        if not present.any():
+            continue
         columns = [wrist_slot, wrist_slot + 1] + list(range(world_slot, world_slot + 63))
-        index = 0
-        while index < len(out):
+        known = np.flatnonzero(present)
+        first, last = int(known[0]), int(known[-1])
+
+        # Leading and trailing gaps: hold the nearest real frame.
+        if first > 0:
+            out[:first, columns] = out[first, columns]
+        if last < len(out) - 1:
+            out[last + 1 :, columns] = out[last, columns]
+
+        index = first
+        while index < last:
             if present[index]:
                 index += 1
                 continue
             gap_start = index
-            while index < len(out) and not present[index]:
+            while index <= last and not present[index]:
                 index += 1
-            gap_end = index  # exclusive
-            if gap_start == 0 or gap_end == len(out):
-                continue  # nothing to interpolate between
-            if gap_end - gap_start > 2:
-                continue  # a real absence, not a dropout
+            gap_end = index  # exclusive; guaranteed <= last and present
+            if gap_end - gap_start > MAX_FILL_FRAMES:
+                continue
+            before = out[gap_start - 1, columns]
+            after = out[gap_end, columns]
+            for k, position in enumerate(range(gap_start, gap_end), start=1):
+                t = k / (gap_end - gap_start + 1)
+                out[position, columns] = before * (1 - t) + after * t
+    return out
+
+
+def fill_pose(frames: np.ndarray) -> np.ndarray:
+    """Hold and interpolate the pose block the same way.
+
+    The shoulders are the anchor everything else is measured against: a single
+    frame where they drop out rescales the entire figure for one frame, which
+    reads as the avatar flinching. Unlike the hands, a pose point is filled for
+    any gap length — an occluded elbow is still attached to the body, and the
+    alternative is an arm that detaches.
+    """
+    out = frames.copy()
+    for slot in range(POSE_POINTS):
+        base = POSE_BLOCK + slot * 3
+        columns = [base, base + 1, base + 2]
+        present = (out[:, base] != 0) | (out[:, base + 1] != 0)
+        if not present.any():
+            continue
+        known = np.flatnonzero(present)
+        first, last = int(known[0]), int(known[-1])
+        if first > 0:
+            out[:first, columns] = out[first, columns]
+        if last < len(out) - 1:
+            out[last + 1 :, columns] = out[last, columns]
+        index = first
+        while index < last:
+            if present[index]:
+                index += 1
+                continue
+            gap_start = index
+            while index <= last and not present[index]:
+                index += 1
+            gap_end = index
             before = out[gap_start - 1, columns]
             after = out[gap_end, columns]
             for k, position in enumerate(range(gap_start, gap_end), start=1):
@@ -270,7 +419,16 @@ def score(frames: np.ndarray) -> float:
         return 0.0
     present = hands_present(frames)
     tracked = float((present > 0).mean())
-    body = float((frames[:, POSE_BLOCK + 2] != 0).mean())
+    body = float((frames[:, POSE_BLOCK + P_L_SHOULDER * 3] != 0).mean())
+    # An arm the solver can actually terminate: shoulder, elbow and wrist all
+    # present. A clip that tracks hands but loses elbows produces a figure whose
+    # arms guess, so it should lose to one that does not.
+    arms = float(
+        (
+            (pose_xy(frames, P_L_ELBOW)[:, 1] != 0)
+            | (pose_xy(frames, P_R_ELBOW)[:, 1] != 0)
+        ).mean()
+    )
 
     # An isolated sign runs roughly 1-2.5 seconds. Score peaks in that band and
     # falls away on both sides: a very short clip is a fragment, and a very long
@@ -284,7 +442,7 @@ def score(frames: np.ndarray) -> float:
     else:
         length = max(0.0, 1.0 - (seconds - 2.5) / 3.0)
 
-    return tracked * 0.5 + body * 0.15 + length * 0.35
+    return tracked * 0.42 + body * 0.13 + arms * 0.15 + length * 0.30
 
 
 def main() -> None:
@@ -292,6 +450,12 @@ def main() -> None:
     parser.add_argument("--videos-dir", type=Path, default=ML_DIR / "videos")
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
     parser.add_argument("--only", nargs="*", help="rebuild only these glosses")
+    parser.add_argument(
+        "--pose-model",
+        type=Path,
+        default=None,
+        help="PoseLandmarker bundle; defaults to the full one when present",
+    )
     args = parser.parse_args()
 
     by_gloss: dict[str, list[Path]] = defaultdict(list)
@@ -302,7 +466,14 @@ def main() -> None:
         sys.exit(f"no clips in {args.videos_dir} — run ml/fetch_dictionary.py --download")
 
     hand_model = ensure_model(DEFAULT_MODEL_PATH)
-    pose_model = ensure_pose_model(DEFAULT_POSE_MODEL_PATH)
+    if args.pose_model is not None:
+        pose_model = args.pose_model
+    elif FULL_POSE_MODEL_PATH.exists():
+        pose_model = FULL_POSE_MODEL_PATH
+    else:
+        pose_model = ensure_pose_model(DEFAULT_POSE_MODEL_PATH)
+    print(f"pose model: {pose_model.name}")
+
     hand_opts = vision.HandLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=str(hand_model)),
         running_mode=vision.RunningMode.VIDEO, num_hands=2,
@@ -340,7 +511,7 @@ def main() -> None:
             with vision.HandLandmarker.create_from_options(hand_opts) as hands, \
                  vision.PoseLandmarker.create_from_options(pose_opts) as pose:
                 frames = clip_motion(video, hands, pose)
-            frames = fill_gaps(trim(frames))[:MAX_FRAMES]
+            frames = fill_pose(fill_gaps(trim(frames)))[:MAX_FRAMES]
             value = score(frames)
             if value > best_score:
                 best, best_score = frames, value
@@ -350,10 +521,12 @@ def main() -> None:
             print(f"  {n:>3}/{len(targets)} {gloss:<16} no usable clip")
             continue
 
+        present = hands_present(best)
         payload = {
             "gloss": gloss,
             "english": preferred_english(gloss),
             "pos": POS_BY_GLOSS.get(gloss, "noun"),
+            "format": FORMAT,
             "fps": TARGET_FPS,
             "frames": [[round(float(v), 4) for v in row] for row in best],
         }
@@ -365,15 +538,20 @@ def main() -> None:
             "pos": POS_BY_GLOSS.get(gloss, "noun"),
             "frames": len(best),
             "seconds": round(len(best) / TARGET_FPS, 2),
-            "twoHanded": bool((hands_present(best) == 2).mean() > 0.5),
+            "twoHanded": bool((present == 2).mean() > 0.5),
+            # What fraction of the sign has at least one hand. A number the UI
+            # can act on: a sign under about 0.9 is worth rebuilding, and one
+            # under 0.6 should probably not be shown as a reference at all.
+            "coverage": round(float((present > 0).mean()), 3),
             "quality": round(best_score, 3),
         }
         print(f"  {n:>3}/{len(targets)} {gloss:<16} {len(best):>3} frames  "
-              f"q={best_score:.2f}", flush=True)
+              f"q={best_score:.2f}  cov={manifest[gloss]['coverage']:.2f}", flush=True)
 
     (args.out_dir / "manifest.json").write_text(json.dumps({
         "_source": "ISLRTC official Indian Sign Language dictionary "
                    "(Government of India). Landmarks only — no video is shipped.",
+        "format": FORMAT,
         "fps": TARGET_FPS,
         "signs": dict(sorted(manifest.items())),
     }, indent=1), encoding="utf-8")
